@@ -1,0 +1,77 @@
+# Dockerfile for cross-compiling snipQ for Windows using MXE + Qt6
+# Usage:
+#   docker build -f Dockerfile.windows-crossbuild -t snipQ-win-builder .
+#   docker run --rm -v $(pwd)/dist:/out snipQ-win-builder
+#
+# Result: dist/snipQ-windows-x64.zip
+
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install base tools
+RUN apt-get update && apt-get install -y \
+    build-essential cmake ninja-build git wget curl \
+    python3 python3-pip \
+    gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64 mingw-w64 \
+    libz-mingw-w64-dev tcl \
+    # Qt6 host tools (needed for cross-compile)
+    qt6-base-dev qt6-tools-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install aqtinstall for Qt6 Windows binaries
+RUN pip3 install aqtinstall
+
+# Download Qt6 for Windows (mingw)
+RUN aqt install-qt windows desktop 6.7.0 win64_mingw \
+    -O /opt/Qt \
+    --archives qtbase qttools qtsql qtnetwork \
+    || echo "aqt failed - try alternate mirror"
+
+# Fallback: if aqt fails, build from source (see README)
+ENV Qt6_WIN_PATH=/opt/Qt/6.7.0/mingw_64
+ENV PATH="${Qt6_WIN_PATH}/bin:${PATH}"
+
+WORKDIR /src
+COPY . .
+
+# Write mingw toolchain
+RUN cat > /tmp/mingw.cmake << 'TOOLCHAIN'
+set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_C_COMPILER   x86_64-w64-mingw32-gcc)
+set(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
+set(CMAKE_RC_COMPILER  x86_64-w64-mingw32-windres)
+set(CMAKE_FIND_ROOT_PATH /usr/x86_64-w64-mingw32 /opt/Qt/6.7.0/mingw_64)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+TOOLCHAIN
+
+RUN cmake -B build-win \
+    -GNinja \
+    -DCMAKE_TOOLCHAIN_FILE=/tmp/mingw.cmake \
+    -DCMAKE_PREFIX_PATH="${Qt6_WIN_PATH}" \
+    -DQT_HOST_PATH=/usr \
+    -DQT_HOST_PATH_CMAKE_DIR=/usr/lib/x86_64-linux-gnu/cmake \
+    -DCMAKE_BUILD_TYPE=Release
+
+RUN cmake --build build-win --parallel
+
+# Bundle
+RUN mkdir -p /dist/snipQ-windows && \
+    cp build-win/snipQ.exe /dist/snipQ-windows/ && \
+    cp "${Qt6_WIN_PATH}/bin/Qt6Core.dll" /dist/snipQ-windows/ && \
+    cp "${Qt6_WIN_PATH}/bin/Qt6Gui.dll" /dist/snipQ-windows/ && \
+    cp "${Qt6_WIN_PATH}/bin/Qt6Widgets.dll" /dist/snipQ-windows/ && \
+    cp "${Qt6_WIN_PATH}/bin/Qt6Sql.dll" /dist/snipQ-windows/ && \
+    cp "${Qt6_WIN_PATH}/bin/Qt6Network.dll" /dist/snipQ-windows/ && \
+    mkdir -p /dist/snipQ-windows/plugins/platforms && \
+    mkdir -p /dist/snipQ-windows/plugins/sqldrivers && \
+    cp "${Qt6_WIN_PATH}/plugins/platforms/qwindows.dll"         /dist/snipQ-windows/plugins/platforms/ && \
+    cp "${Qt6_WIN_PATH}/plugins/sqldrivers/qsqlite.dll"         /dist/snipQ-windows/plugins/sqldrivers/ && \
+    cp /usr/x86_64-w64-mingw32/lib/libgcc_s_seh-1.dll           /dist/snipQ-windows/ 2>/dev/null || true && \
+    cp /usr/x86_64-w64-mingw32/lib/libstdc++-6.dll              /dist/snipQ-windows/ 2>/dev/null || true && \
+    cp /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll           /dist/snipQ-windows/ 2>/dev/null || true && \
+    cp README.md /dist/snipQ-windows/ && \
+    cd /dist && zip -r snipQ-windows-x64.zip snipQ-windows/
+
+CMD ["sh", "-c", "cp /dist/snipQ-windows-x64.zip /out/ && echo 'Done: /out/snipQ-windows-x64.zip'"]
