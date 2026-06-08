@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main, master ]
     tags: [ 'v*' ]
+  
   pull_request:
     branches: [ main, master ]
 
@@ -12,166 +13,60 @@ jobs:
   build-linux:
     name: Build Linux (Ubuntu 22.04)
     runs-on: ubuntu-22.04
+
     steps:
-      - uses: actions/checkout@v4
+      # ── Checkout ─────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Install Qt6 + dependencies
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y \
-            cmake ninja-build build-essential \
-            qt6-base-dev qt6-tools-dev libqt6sql6-sqlite \
-            libgl1-mesa-dev patchelf
+      # ── Cache apt packages ───────────────────────────────────────────────────
+      - name: Cache apt
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: >
+            qt6-base-dev
+            qt6-base-dev-tools
+            libgl-dev
+            libxkbcommon-dev
+            libvulkan-dev
+            cmake
+            ninja-build
+            ffmpeg
+          version: 1.0
 
+      # ── Configure ────────────────────────────────────────────────────────────
       - name: Configure
-        run: cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake -B build -S . \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
 
+      # ── Build ─────────────────────────────────────────────────────────────────
       - name: Build
         run: cmake --build build --parallel
 
-      - name: Strip binary
-        run: strip build/snipQ
+      # ── Tests ─────────────────────────────────────────────────────────────────
+      - name: Run tests
+        working-directory: build
+        env:
+          # Tests use QTEST_GUILESS_MAIN (no display needed),
+          # but set offscreen just in case Qt probes for a platform.
+          QT_QPA_PLATFORM: offscreen
+        run: ctest --output-on-failure --verbose
 
-      - name: Bundle (linuxdeploy)
-        run: |
-          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
-          chmod +x linuxdeploy*.AppImage
-
-          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
-          cp build/snipQ AppDir/usr/bin/
-          cat > AppDir/usr/share/applications/snipQ.desktop << 'DESKTOP'
-          [Desktop Entry]
-          Name=snipQ
-          Exec=snipQ
-          Icon=snipQ
-          Type=Application
-          Categories=Development;
-          DESKTOP
-          touch AppDir/usr/share/icons/hicolor/256x256/apps/snipQ.png
-
-          export OUTPUT=snipQ-linux-x86_64.AppImage
-          QMAKE=qmake6 ./linuxdeploy-x86_64.AppImage \
-            --appdir AppDir \
-            --plugin qt \
-            --output appimage || true
-          
-          # Fallback: plain tar.gz bundle
-          mkdir -p dist/snipQ-linux
-          cp build/snipQ dist/snipQ-linux/
-          cp README.md dist/snipQ-linux/
-          cat > dist/snipQ-linux/run.sh << 'SH'
-          #!/bin/sh
-          DIR="$(cd "$(dirname "$0")" && pwd)"
-          exec "$DIR/snipQ" "$@"
-          SH
-          chmod +x dist/snipQ-linux/run.sh
-          cd dist && tar czf ../snipQ-linux-x86_64.tar.gz snipQ-linux/
-
-      - name: Upload Linux artifact
+      # ── Upload test results ───────────────────────────────────────────────────
+      - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: snipQ-linux-x86_64
-          path: snipQ-linux-x86_64.tar.gz
+          name: test-results
+          path: build/Testing/
 
-  # ─── Windows ──────────────────────────────────────────────────────────────
-  build-windows:
-    name: Build Windows (MSVC 2022)
-    runs-on: windows-2022
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.7.0'
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_msvc2019_64'
-          cache: true
-
-      - name: Configure (MSVC)
-        shell: cmd
-        run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake -B build -G "Visual Studio 17 2022" -A x64 ^
-                -DCMAKE_PREFIX_PATH="%Qt6_DIR%"
-
-      - name: Build
-        shell: cmd
-        run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake --build build --config Release --parallel
-
-      - name: Deploy (windeployqt)
-        shell: cmd
-        run: |
-          mkdir dist\snipQ-windows
-          copy build\Release\snipQ.exe dist\snipQ-windows\
-          windeployqt --release --no-translations ^
-            --no-system-d3d-compiler ^
-            dist\snipQ-windows\snipQ.exe
-          copy README.md dist\snipQ-windows\
-
-      - name: Zip Windows bundle
-        shell: pwsh
-        run: |
-          Compress-Archive -Path dist\snipQ-windows\* `
-            -DestinationPath snipQ-windows-x64.zip
-
-      - name: Upload Windows artifact
+      # ── Upload binary (for manual inspection, not a release) ─────────────────
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: snipQ-windows-x64
-          path: snipQ-windows-x64.zip
-
-  # ─── macOS ────────────────────────────────────────────────────────────────
-  build-macos:
-    name: Build macOS (arm64 + x86_64)
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.7.0'
-          host: 'mac'
-          target: 'desktop'
-          arch: 'clang_64'
-          cache: true
-
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Deploy (macdeployqt)
-        run: |
-          macdeployqt build/snipQ.app -dmg
-          mv build/snipQ.dmg snipQ-macos.dmg
-
-      - name: Upload macOS artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: snipQ-macos
-          path: snipQ-macos.dmg
-
-  # ─── Release ──────────────────────────────────────────────────────────────
-  release:
-    name: Create GitHub Release
-    needs: [build-linux, build-windows, build-macos]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/download-artifact@v4
-
-      - name: Publish Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            snipQ-linux-x86_64/snipQ-linux-x86_64.tar.gz
-            snipQ-windows-x64/snipQ-windows-x64.zip
-            snipQ-macos/snipQ-macos.dmg
-          generate_release_notes: true
+          name: snipqq-linux-x86_64
+          path: build/snipq
+          if-no-files-found: error
