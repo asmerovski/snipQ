@@ -2,7 +2,6 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QMessageBox>
 
 ImportExport::ImportExport(Database* db, QObject* parent)
     : QObject(parent), m_db(db) {}
@@ -10,8 +9,7 @@ ImportExport::ImportExport(Database* db, QObject* parent)
 bool ImportExport::exportToFile(const QString& path) {
     QFile file(path);
     if (!file.open(QIODevice::WriteOnly)) return false;
-    QJsonObject root = m_db->exportToJson();
-    file.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
+    file.write(QJsonDocument(m_db->exportToJson()).toJson(QJsonDocument::Indented));
     return true;
 }
 

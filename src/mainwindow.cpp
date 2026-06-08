@@ -280,6 +280,12 @@ void MainWindow::onCloudSync() {
 }
 
 void MainWindow::onDataChanged() {
-    m_sidebar->refresh();
-    m_snippetList->refresh();
+    // Use QueuedConnection semantics via invokeMethod so this always runs
+    // AFTER the current call stack fully unwinds. Without this, a save
+    // triggered inside onCurrentRowChanged causes populateList to be called
+    // re-entrantly while QListWidget is mid-selection → crash in QTextEngine.
+    QMetaObject::invokeMethod(this, [this]() {
+        m_sidebar->refresh();
+        m_snippetList->refresh();
+    }, Qt::QueuedConnection);
 }

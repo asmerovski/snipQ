@@ -30,6 +30,10 @@ set(SOURCES
     resources/resources.qrc
 )
 
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -fno-omit-frame-pointer -fno-inline")
+set(CMAKE_C_FLAGS_DEBUG   "-g3 -O0 -fno-omit-frame-pointer -fno-inline")
+
 qt_add_executable(snipQ ${SOURCES})
 
 # So that #include "database.h", #include "models/snippet.h" etc all work

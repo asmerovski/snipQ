@@ -49,8 +49,6 @@ signals:
 
 private:
     bool createSchema();
-    bool saveSnippetTabs(int snippetId, const QList<SnippetTab>& tabs);
-    QList<SnippetTab> loadSnippetTabs(int snippetId);
     Snippet rowToSnippet(const QSqlQuery& q);
 
     QSqlDatabase m_db;

@@ -45,12 +45,9 @@ template <> constexpr inline auto SnippetEditor::qt_create_metaobjectdata<qt_met
         "snippetId",
         "onTitleChanged",
         "text",
-        "onTabContentChanged",
+        "onContentChanged",
         "onLanguageChanged",
         "lang",
-        "onAddTab",
-        "onCloseTab",
-        "index",
         "onAddTag",
         "onCopyContent",
         "autoSave"
@@ -65,24 +62,18 @@ template <> constexpr inline auto SnippetEditor::qt_create_metaobjectdata<qt_met
         QtMocHelpers::SlotData<void(const QString &)>(4, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { QMetaType::QString, 5 },
         }}),
-        // Slot 'onTabContentChanged'
+        // Slot 'onContentChanged'
         QtMocHelpers::SlotData<void()>(6, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'onLanguageChanged'
         QtMocHelpers::SlotData<void(const QString &)>(7, 2, QMC::AccessPrivate, QMetaType::Void, {{
             { QMetaType::QString, 8 },
         }}),
-        // Slot 'onAddTab'
-        QtMocHelpers::SlotData<void()>(9, 2, QMC::AccessPrivate, QMetaType::Void),
-        // Slot 'onCloseTab'
-        QtMocHelpers::SlotData<void(int)>(10, 2, QMC::AccessPrivate, QMetaType::Void, {{
-            { QMetaType::Int, 11 },
-        }}),
         // Slot 'onAddTag'
-        QtMocHelpers::SlotData<void()>(12, 2, QMC::AccessPrivate, QMetaType::Void),
+        QtMocHelpers::SlotData<void()>(9, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'onCopyContent'
-        QtMocHelpers::SlotData<void()>(13, 2, QMC::AccessPrivate, QMetaType::Void),
+        QtMocHelpers::SlotData<void()>(10, 2, QMC::AccessPrivate, QMetaType::Void),
         // Slot 'autoSave'
-        QtMocHelpers::SlotData<void()>(14, 2, QMC::AccessPrivate, QMetaType::Void),
+        QtMocHelpers::SlotData<void()>(11, 2, QMC::AccessPrivate, QMetaType::Void),
     };
     QtMocHelpers::UintData qt_properties {
     };
@@ -108,13 +99,11 @@ void SnippetEditor::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _i
         switch (_id) {
         case 0: _t->snippetModified((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
         case 1: _t->onTitleChanged((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
-        case 2: _t->onTabContentChanged(); break;
+        case 2: _t->onContentChanged(); break;
         case 3: _t->onLanguageChanged((*reinterpret_cast<std::add_pointer_t<QString>>(_a[1]))); break;
-        case 4: _t->onAddTab(); break;
-        case 5: _t->onCloseTab((*reinterpret_cast<std::add_pointer_t<int>>(_a[1]))); break;
-        case 6: _t->onAddTag(); break;
-        case 7: _t->onCopyContent(); break;
-        case 8: _t->autoSave(); break;
+        case 4: _t->onAddTag(); break;
+        case 5: _t->onCopyContent(); break;
+        case 6: _t->autoSave(); break;
         default: ;
         }
     }
@@ -143,14 +132,14 @@ int SnippetEditor::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 9)
+        if (_id < 7)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 9;
+        _id -= 7;
     }
     if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 9)
+        if (_id < 7)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 9;
+        _id -= 7;
     }
     return _id;
 }

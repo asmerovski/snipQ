@@ -2,8 +2,9 @@
 #include <QTimer>
 #include <QApplication>
 #include <QClipboard>
-#include <QScrollArea>
+#include <QFontInfo>
 #include <QToolBar>
+#include <QScrollBar>
 
 static const QStringList LANGUAGES = {
     "plaintext","bash","c","cpp","csharp","css","dart","diff","dockerfile",
@@ -13,22 +14,26 @@ static const QStringList LANGUAGES = {
     "typescript","xml","yaml"
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
-    : QWidget(parent), m_db(db) {
+    : QWidget(parent), m_db(db)
+{
     setObjectName("EditorPanel");
     auto* lay = new QVBoxLayout(this);
     lay->setContentsMargins(0, 0, 0, 0);
     lay->setSpacing(0);
 
-    // ── Title bar ───────────────────────────────────────────
+    // ── Title ────────────────────────────────────────────────
     m_titleEdit = new QLineEdit(this);
     m_titleEdit->setObjectName("SnippetTitle");
     m_titleEdit->setPlaceholderText("Snippet name…");
     lay->addWidget(m_titleEdit);
 
-    // ── Toolbar (lang selector + actions) ───────────────────
+    // ── Toolbar ──────────────────────────────────────────────
     auto* toolbar = new QToolBar(this);
     toolbar->setMovable(false);
+    toolbar->setIconSize(QSize(14, 14));
 
     m_langCombo = new QComboBox(this);
     m_langCombo->addItems(LANGUAGES);
@@ -38,16 +43,9 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
     toolbar->addSeparator();
 
     auto* copyBtn = new QToolButton(this);
-    copyBtn->setText("⧉ Copy");
-    copyBtn->setToolTip("Copy current tab content");
+    copyBtn->setText("\u29c9  Copy");
+    copyBtn->setToolTip("Copy content to clipboard");
     toolbar->addWidget(copyBtn);
-
-    toolbar->addSeparator();
-
-    auto* addTabBtn = new QToolButton(this);
-    addTabBtn->setText("＋ Tab");
-    addTabBtn->setToolTip("Add fragment tab");
-    toolbar->addWidget(addTabBtn);
 
     toolbar->addSeparator();
 
@@ -57,48 +55,71 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
 
     lay->addWidget(toolbar);
 
-    // ── Code tabs ────────────────────────────────────────────
-    m_tabs = new QTabWidget(this);
-    m_tabs->setTabsClosable(true);
-    m_tabs->setMovable(true);
-    lay->addWidget(m_tabs);
+    // ── Code editor ──────────────────────────────────────────
+    m_editor = new QPlainTextEdit(this);
+    m_editor->setLineWrapMode(QPlainTextEdit::NoWrap);
+    m_editor->setPlaceholderText("// Start typing your snippet…");
+    m_editor->setFont(makeMonoFont());
+    // Ensure cursor is always a text cursor — never an arrow
+    m_editor->viewport()->setCursor(Qt::IBeamCursor);
+    lay->addWidget(m_editor, 1);
 
     // ── Tags bar ─────────────────────────────────────────────
     buildTagsBar();
     lay->addWidget(m_tagsBar);
 
-    // ── Timer for auto-save ──────────────────────────────────
+    // ── Auto-save timer ───────────────────────────────────────
     m_saveTimer = new QTimer(this);
     m_saveTimer->setSingleShot(true);
-    m_saveTimer->setInterval(800);
-    connect(m_saveTimer, &QTimer::timeout, this, &SnippetEditor::autoSave);
+    m_saveTimer->setInterval(600);
 
     // ── Connections ──────────────────────────────────────────
-    connect(m_titleEdit, &QLineEdit::textChanged, this, &SnippetEditor::onTitleChanged);
-    connect(m_langCombo, &QComboBox::currentTextChanged, this, &SnippetEditor::onLanguageChanged);
-    connect(addTabBtn,   &QToolButton::clicked, this, &SnippetEditor::onAddTab);
-    connect(copyBtn,     &QToolButton::clicked, this, &SnippetEditor::onCopyContent);
-    connect(m_tabs, &QTabWidget::tabCloseRequested, this, &SnippetEditor::onCloseTab);
+    connect(m_saveTimer,  &QTimer::timeout,
+            this,         &SnippetEditor::autoSave);
+    connect(m_titleEdit,  &QLineEdit::textChanged,
+            this,         &SnippetEditor::onTitleChanged);
+    connect(m_editor,     &QPlainTextEdit::textChanged,
+            this,         &SnippetEditor::onContentChanged);
+    connect(m_langCombo,  &QComboBox::currentTextChanged,
+            this,         &SnippetEditor::onLanguageChanged);
+    connect(copyBtn,      &QToolButton::clicked,
+            this,         &SnippetEditor::onCopyContent);
 
     clearEditor();
 }
 
-void SnippetEditor::clearEditor() {
+// ─── Public ──────────────────────────────────────────────────────────────────
+
+void SnippetEditor::clearEditor()
+{
     m_loading = true;
     m_snippet = Snippet{};
     m_titleEdit->clear();
     m_titleEdit->setEnabled(false);
-    m_tabs->clear();
+    m_editor->clear();
+    m_editor->setEnabled(false);
     m_langCombo->setEnabled(false);
     m_tagInput->clear();
     rebuildTagChips();
-    m_charCount->setText("—");
+    m_charCount->setText(QStringLiteral("\u2014"));
+    m_dirty   = false;
     m_loading = false;
 }
 
-void SnippetEditor::loadSnippet(int id) {
-    autoSave(); // flush any pending save
+void SnippetEditor::loadSnippet(int id)
+{
+    // Stop timer first so it can't fire mid-load
+    m_saveTimer->stop();
+
+    // Flush dirty state for the PREVIOUS snippet, blocking dataChanged so the
+    // list doesn't rebuild re-entrantly while we're inside onCurrentRowChanged
+    if (m_dirty && m_snippet.isValid()) {
+        QSignalBlocker dbBlocker(m_db);
+        autoSave();
+    }
+    m_dirty   = false;
     m_loading = true;
+
     m_snippet = m_db->snippetById(id);
     if (!m_snippet.isValid()) {
         clearEditor();
@@ -106,91 +127,66 @@ void SnippetEditor::loadSnippet(int id) {
     }
 
     m_titleEdit->setEnabled(true);
+    m_editor->setEnabled(true);
     m_langCombo->setEnabled(true);
-    m_titleEdit->setText(m_snippet.name);
 
-    m_tabs->clear();
-    for (auto& tab : m_snippet.tabs) {
-        auto* editor = new QPlainTextEdit(this);
-        editor->setPlainText(tab.content);
-        editor->setLineWrapMode(QPlainTextEdit::NoWrap);
-        editor->document()->setDefaultFont(QFont("JetBrains Mono,Cascadia Code,Fira Code,Consolas", 13));
-        m_tabs->addTab(editor, tab.name);
-        connect(editor, &QPlainTextEdit::textChanged, this, &SnippetEditor::onTabContentChanged);
-    }
-    if (m_tabs->count() > 0) {
-        m_tabs->setCurrentIndex(0);
-        // Set language combo
-        QString lang = m_snippet.tabs[0].language;
-        int idx = LANGUAGES.indexOf(lang);
+    // Block widget signals while we populate to avoid spurious dirty-marks
+    {
+        QSignalBlocker tb(m_titleEdit);
+        QSignalBlocker eb(m_editor);
+        QSignalBlocker lb(m_langCombo);
+
+        m_titleEdit->setText(m_snippet.name);
+
+        m_editor->setPlainText(m_snippet.content);
+        // Restore cursor to top without triggering a scroll-to-cursor jump
+        QTextCursor tc = m_editor->textCursor();
+        tc.movePosition(QTextCursor::Start);
+        m_editor->setTextCursor(tc);
+
+        int idx = LANGUAGES.indexOf(m_snippet.language);
         m_langCombo->setCurrentIndex(idx >= 0 ? idx : 0);
     }
 
     rebuildTagChips();
-    m_dirty = false;
+    m_charCount->setText(
+        QStringLiteral("%1 chars").arg(m_snippet.content.length()));
+
+    m_dirty   = false;
     m_loading = false;
-    onTabContentChanged(); // update char count
 }
 
-void SnippetEditor::onTitleChanged(const QString& text) {
+// ─── Private slots ───────────────────────────────────────────────────────────
+
+void SnippetEditor::onTitleChanged(const QString& text)
+{
     if (m_loading || !m_snippet.isValid()) return;
     m_snippet.name = text;
     scheduleAutoSave();
 }
 
-void SnippetEditor::onTabContentChanged() {
-    if (m_snippet.isValid()) {
-        int totalChars = 0;
-        for (int i = 0; i < m_tabs->count(); ++i) {
-            auto* ed = qobject_cast<QPlainTextEdit*>(m_tabs->widget(i));
-            if (ed) totalChars += ed->toPlainText().length();
-        }
-        m_charCount->setText(QStringLiteral("%1 chars").arg(totalChars));
-    }
+void SnippetEditor::onContentChanged()
+{
     if (m_loading || !m_snippet.isValid()) return;
+    int len = m_editor->toPlainText().length();
+    m_charCount->setText(QStringLiteral("%1 chars").arg(len));
     scheduleAutoSave();
 }
 
-void SnippetEditor::onLanguageChanged(const QString& lang) {
+void SnippetEditor::onLanguageChanged(const QString& lang)
+{
     if (m_loading || !m_snippet.isValid()) return;
-    int idx = m_tabs->currentIndex();
-    if (idx >= 0 && idx < m_snippet.tabs.size()) {
-        m_snippet.tabs[idx].language = lang;
-        scheduleAutoSave();
-    }
-}
-
-void SnippetEditor::onAddTab() {
-    if (!m_snippet.isValid()) return;
-    SnippetTab tab;
-    tab.name     = QStringLiteral("Fragment %1").arg(m_snippet.tabs.size() + 1);
-    tab.content  = "";
-    tab.language = "plaintext";
-    m_snippet.tabs.append(tab);
-
-    auto* editor = new QPlainTextEdit(this);
-    editor->setLineWrapMode(QPlainTextEdit::NoWrap);
-    editor->document()->setDefaultFont(QFont("JetBrains Mono,Cascadia Code,Fira Code,Consolas", 13));
-    m_tabs->addTab(editor, tab.name);
-    m_tabs->setCurrentIndex(m_tabs->count() - 1);
-    connect(editor, &QPlainTextEdit::textChanged, this, &SnippetEditor::onTabContentChanged);
+    m_snippet.language = lang;
     scheduleAutoSave();
 }
 
-void SnippetEditor::onCloseTab(int index) {
-    if (!m_snippet.isValid() || m_snippet.tabs.size() <= 1) return;
-    m_tabs->removeTab(index);
-    if (index < m_snippet.tabs.size())
-        m_snippet.tabs.removeAt(index);
-    scheduleAutoSave();
+void SnippetEditor::onCopyContent()
+{
+    QApplication::clipboard()->setText(m_editor->toPlainText());
 }
 
-void SnippetEditor::onCopyContent() {
-    auto* ed = qobject_cast<QPlainTextEdit*>(m_tabs->currentWidget());
-    if (ed) QApplication::clipboard()->setText(ed->toPlainText());
-}
-
-void SnippetEditor::onAddTag() {
+void SnippetEditor::onAddTag()
+{
     QString tag = m_tagInput->text().trimmed().toLower();
     if (tag.isEmpty() || !m_snippet.isValid()) return;
     if (!m_snippet.tags.contains(tag)) {
@@ -201,7 +197,36 @@ void SnippetEditor::onAddTag() {
     }
 }
 
-void SnippetEditor::buildTagsBar() {
+void SnippetEditor::autoSave()
+{
+    if (!m_dirty || !m_snippet.isValid()) return;
+    m_snippet.content = m_editor->toPlainText();
+    m_db->updateSnippet(m_snippet);
+    m_dirty = false;
+    emit snippetModified(m_snippet.id);
+}
+
+// ─── Private helpers ─────────────────────────────────────────────────────────
+
+QFont SnippetEditor::makeMonoFont() const
+{
+    QFont f;
+    f.setStyleHint(QFont::Monospace);
+    f.setFixedPitch(true);
+    f.setPointSize(13);
+    static const QStringList preferred = {
+        "JetBrains Mono","Cascadia Code","Fira Code","Hack","Source Code Pro",
+        "Consolas","Courier New","monospace"
+    };
+    for (const QString& name : preferred) {
+        f.setFamily(name);
+        if (QFontInfo(f).fixedPitch()) break;
+    }
+    return f;
+}
+
+void SnippetEditor::buildTagsBar()
+{
     m_tagsBar = new QWidget(this);
     m_tagsBar->setObjectName("TagsBar");
     m_tagsLayout = new QHBoxLayout(m_tagsBar);
@@ -210,31 +235,39 @@ void SnippetEditor::buildTagsBar() {
 
     m_tagInput = new QLineEdit(m_tagsBar);
     m_tagInput->setPlaceholderText("Add tag…");
-    m_tagInput->setFixedWidth(120);
+    m_tagInput->setFixedWidth(110);
     m_tagInput->setStyleSheet(
         "background:#161b22; border:1px solid #30363d; border-radius:4px;"
         "padding:2px 8px; font-size:11px; color:#8b949e;");
-    connect(m_tagInput, &QLineEdit::returnPressed, this, &SnippetEditor::onAddTag);
+    connect(m_tagInput, &QLineEdit::returnPressed,
+            this,       &SnippetEditor::onAddTag);
 
     m_tagsLayout->addWidget(m_tagInput);
     m_tagsLayout->addStretch();
 }
 
-void SnippetEditor::rebuildTagChips() {
-    // Remove chip widgets (keep input and stretch)
+void SnippetEditor::rebuildTagChips()
+{
+    // Remove all chip widgets (leave m_tagInput and the stretch)
     QList<QWidget*> chips;
     for (int i = 0; i < m_tagsLayout->count(); ++i) {
-        auto* w = m_tagsLayout->itemAt(i)->widget();
+        auto* item = m_tagsLayout->itemAt(i);
+        if (!item) continue;
+        auto* w = item->widget();
         if (w && w != m_tagInput) chips << w;
     }
-    for (auto* w : chips) { m_tagsLayout->removeWidget(w); delete w; }
+    for (auto* w : chips) {
+        m_tagsLayout->removeWidget(w);
+        delete w;
+    }
 
-    for (auto& tag : m_snippet.tags) {
+    for (const QString& tag : m_snippet.tags) {
         auto* chip = new QToolButton(m_tagsBar);
-        chip->setText(QStringLiteral("# ") + tag + "  ×");
+        chip->setText(QStringLiteral("# ") + tag + QStringLiteral("  \u00d7"));
         chip->setStyleSheet(
-            "QToolButton { background:#1f3352; color:#58a6ff; border:1px solid #2d4a6e;"
-            "border-radius:4px; font-size:11px; padding:2px 6px; }"
+            "QToolButton { background:#1f3352; color:#58a6ff;"
+            "border:1px solid #2d4a6e; border-radius:4px;"
+            "font-size:11px; padding:2px 6px; }"
             "QToolButton:hover { background:#2d4a6e; }");
         QString tagCopy = tag;
         connect(chip, &QToolButton::clicked, this, [this, tagCopy]() {
@@ -242,24 +275,13 @@ void SnippetEditor::rebuildTagChips() {
             rebuildTagChips();
             scheduleAutoSave();
         });
+        // Insert before the stretch (last item)
         m_tagsLayout->insertWidget(m_tagsLayout->count() - 1, chip);
     }
 }
 
-void SnippetEditor::scheduleAutoSave() {
+void SnippetEditor::scheduleAutoSave()
+{
     m_dirty = true;
     m_saveTimer->start();
-}
-
-void SnippetEditor::autoSave() {
-    if (!m_dirty || !m_snippet.isValid()) return;
-    // Sync tab contents from widgets
-    for (int i = 0; i < m_tabs->count() && i < m_snippet.tabs.size(); ++i) {
-        auto* ed = qobject_cast<QPlainTextEdit*>(m_tabs->widget(i));
-        if (ed) m_snippet.tabs[i].content = ed->toPlainText();
-        m_snippet.tabs[i].name = m_tabs->tabText(i);
-    }
-    m_db->updateSnippet(m_snippet);
-    m_dirty = false;
-    emit snippetModified(m_snippet.id);
 }

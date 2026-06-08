@@ -53,7 +53,7 @@ build CMakeFiles/snipQ.dir/snipQ_autogen/mocs_compilation.cpp.o: CXX_COMPILER__s
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/snipQ_autogen/mocs_compilation.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/snipQ_autogen
@@ -63,7 +63,7 @@ build CMakeFiles/snipQ.dir/src/main.cpp.o: CXX_COMPILER__snipQ_unscanned_Debug /
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/main.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src
@@ -73,7 +73,7 @@ build CMakeFiles/snipQ.dir/src/mainwindow.cpp.o: CXX_COMPILER__snipQ_unscanned_D
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/mainwindow.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src
@@ -83,7 +83,7 @@ build CMakeFiles/snipQ.dir/src/sidebar.cpp.o: CXX_COMPILER__snipQ_unscanned_Debu
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/sidebar.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src
@@ -93,7 +93,7 @@ build CMakeFiles/snipQ.dir/src/snippeteditor.cpp.o: CXX_COMPILER__snipQ_unscanne
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/snippeteditor.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src
@@ -103,7 +103,7 @@ build CMakeFiles/snipQ.dir/src/snippetlist.cpp.o: CXX_COMPILER__snipQ_unscanned_
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/snippetlist.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src
@@ -113,7 +113,7 @@ build CMakeFiles/snipQ.dir/src/database.cpp.o: CXX_COMPILER__snipQ_unscanned_Deb
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/database.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src
@@ -123,7 +123,7 @@ build CMakeFiles/snipQ.dir/src/models/snippet.cpp.o: CXX_COMPILER__snipQ_unscann
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/models/snippet.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/models
@@ -133,7 +133,7 @@ build CMakeFiles/snipQ.dir/src/models/folder.cpp.o: CXX_COMPILER__snipQ_unscanne
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/models/folder.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/models
@@ -143,7 +143,7 @@ build CMakeFiles/snipQ.dir/src/dialogs/newfolderdialog.cpp.o: CXX_COMPILER__snip
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/dialogs/newfolderdialog.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/dialogs
@@ -153,7 +153,7 @@ build CMakeFiles/snipQ.dir/src/dialogs/newsnippetdialog.cpp.o: CXX_COMPILER__sni
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/dialogs/newsnippetdialog.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/dialogs
@@ -163,7 +163,7 @@ build CMakeFiles/snipQ.dir/src/dialogs/settingsdialog.cpp.o: CXX_COMPILER__snipQ
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/dialogs/settingsdialog.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/dialogs
@@ -173,7 +173,7 @@ build CMakeFiles/snipQ.dir/src/dialogs/cloudsyncdialog.cpp.o: CXX_COMPILER__snip
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/dialogs/cloudsyncdialog.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/dialogs
@@ -183,7 +183,7 @@ build CMakeFiles/snipQ.dir/src/sync/syncmanager.cpp.o: CXX_COMPILER__snipQ_unsca
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/sync/syncmanager.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/sync
@@ -193,7 +193,7 @@ build CMakeFiles/snipQ.dir/src/sync/ftpsync.cpp.o: CXX_COMPILER__snipQ_unscanned
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/sync/ftpsync.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/sync
@@ -203,7 +203,7 @@ build CMakeFiles/snipQ.dir/src/sync/smbsync.cpp.o: CXX_COMPILER__snipQ_unscanned
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/sync/smbsync.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src/sync
@@ -213,7 +213,7 @@ build CMakeFiles/snipQ.dir/src/importexport.cpp.o: CXX_COMPILER__snipQ_unscanned
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/src/importexport.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/src
@@ -223,7 +223,7 @@ build CMakeFiles/snipQ.dir/snipQ_autogen/3YJK5W5UP7/qrc_resources.cpp.o: CXX_COM
   CONFIG = Debug
   DEFINES = -DHAVE_WEBENGINE -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_OPENGL_LIB -DQT_POSITIONING_LIB -DQT_PRINTSUPPORT_LIB -DQT_QMLINTEGRATION_LIB -DQT_QML_LIB -DQT_QUICK_LIB -DQT_SQL_LIB -DQT_WEBCHANNEL_LIB -DQT_WEBENGINECORE_LIB -DQT_WEBENGINEWIDGETS_LIB -DQT_WIDGETS_LIB
   DEP_FILE = CMakeFiles/snipQ.dir/snipQ_autogen/3YJK5W5UP7/qrc_resources.cpp.o.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g -std=gnu++17 -mno-direct-extern-access
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline -std=gnu++17 -mno-direct-extern-access
   INCLUDES = -I/home/asmer/Projects/snipQ/build/snipQ_autogen/include -I/home/asmer/Projects/snipQ/src -I/home/asmer/Projects/snipQ/src/models -I/home/asmer/Projects/snipQ/src/sync -I/home/asmer/Projects/snipQ/src/dialogs -isystem /usr/include/qt6/QtCore -isystem /usr/include/qt6 -isystem /usr/lib/qt6/mkspecs/linux-g++ -isystem /usr/include/qt6/QtGui -isystem /usr/include/qt6/QtWidgets -isystem /usr/include/qt6/QtSql -isystem /usr/include/qt6/QtNetwork -isystem /usr/include/qt6/QtWebEngineWidgets -isystem /usr/include/qt6/QtWebEngineCore -isystem /usr/include/qt6/QtQuick -isystem /usr/include/qt6/QtQml -isystem /usr/include/qt6/QtQmlIntegration -isystem /usr/include/qt6/QtOpenGL -isystem /usr/include/qt6/QtWebChannel -isystem /usr/include/qt6/QtPositioning -isystem /usr/include/qt6/QtPrintSupport
   OBJECT_DIR = CMakeFiles/snipQ.dir
   OBJECT_FILE_DIR = CMakeFiles/snipQ.dir/snipQ_autogen/3YJK5W5UP7
@@ -240,7 +240,7 @@ build CMakeFiles/snipQ.dir/snipQ_autogen/3YJK5W5UP7/qrc_resources.cpp.o: CXX_COM
 build snipQ: CXX_EXECUTABLE_LINKER__snipQ_Debug CMakeFiles/snipQ.dir/snipQ_autogen/mocs_compilation.cpp.o CMakeFiles/snipQ.dir/src/main.cpp.o CMakeFiles/snipQ.dir/src/mainwindow.cpp.o CMakeFiles/snipQ.dir/src/sidebar.cpp.o CMakeFiles/snipQ.dir/src/snippeteditor.cpp.o CMakeFiles/snipQ.dir/src/snippetlist.cpp.o CMakeFiles/snipQ.dir/src/database.cpp.o CMakeFiles/snipQ.dir/src/models/snippet.cpp.o CMakeFiles/snipQ.dir/src/models/folder.cpp.o CMakeFiles/snipQ.dir/src/dialogs/newfolderdialog.cpp.o CMakeFiles/snipQ.dir/src/dialogs/newsnippetdialog.cpp.o CMakeFiles/snipQ.dir/src/dialogs/settingsdialog.cpp.o CMakeFiles/snipQ.dir/src/dialogs/cloudsyncdialog.cpp.o CMakeFiles/snipQ.dir/src/sync/syncmanager.cpp.o CMakeFiles/snipQ.dir/src/sync/ftpsync.cpp.o CMakeFiles/snipQ.dir/src/sync/smbsync.cpp.o CMakeFiles/snipQ.dir/src/importexport.cpp.o CMakeFiles/snipQ.dir/snipQ_autogen/3YJK5W5UP7/qrc_resources.cpp.o | /usr/lib/libQt6Sql.so.6.11.1 /usr/lib/libQt6WebEngineWidgets.so.6.11.1 /usr/lib/libQt6WebEngineCore.so.6.11.1 /usr/lib/libQt6WebChannel.so.6.11.1 /usr/lib/libQt6Positioning.so.6.11.1 /usr/lib/libQt6PrintSupport.so.6.11.1 /usr/lib/libQt6Widgets.so.6.11.1 /usr/lib/libQt6Quick.so.6.11.1 /usr/lib/libQt6OpenGL.so.6.11.1 /usr/lib/libQt6Gui.so.6.11.1 /usr/lib/libGLX.so /usr/lib/libOpenGL.so /usr/lib/libQt6Qml.so.6.11.1 /usr/lib/libQt6Network.so.6.11.1 /usr/lib/libQt6Core.so.6.11.1 || snipQ_autogen snipQ_autogen_timestamp_deps snipQ_qmlimportscan
   CONFIG = Debug
   DEP_FILE = CMakeFiles/snipQ.dir/link.d
-  FLAGS = -DQT_QML_DEBUG -DQT_DECLARATIVE_DEBUG -g
+  FLAGS = -g3 -O0 -fno-omit-frame-pointer -fno-inline
   LINK_FLAGS = -Wl,--dependency-file=CMakeFiles/snipQ.dir/link.d
   LINK_LIBRARIES = /usr/lib/libQt6Sql.so.6.11.1  /usr/lib/libQt6WebEngineWidgets.so.6.11.1  /usr/lib/libQt6WebEngineCore.so.6.11.1  /usr/lib/libQt6WebChannel.so.6.11.1  /usr/lib/libQt6Positioning.so.6.11.1  /usr/lib/libQt6PrintSupport.so.6.11.1  /usr/lib/libQt6Widgets.so.6.11.1  /usr/lib/libQt6Quick.so.6.11.1  /usr/lib/libQt6OpenGL.so.6.11.1  /usr/lib/libQt6Gui.so.6.11.1  /usr/lib/libGLX.so  /usr/lib/libOpenGL.so  /usr/lib/libQt6Qml.so.6.11.1  /usr/lib/libQt6Network.so.6.11.1  /usr/lib/libQt6Core.so.6.11.1
   OBJECT_DIR = CMakeFiles/snipQ.dir

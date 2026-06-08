@@ -1,6 +1,5 @@
 #pragma once
 #include <QWidget>
-#include <QTabWidget>
 #include <QPlainTextEdit>
 #include <QLineEdit>
 #include <QComboBox>
@@ -8,7 +7,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QToolButton>
-
+#include <QTimer>
 #include "database.h"
 
 class SnippetEditor : public QWidget {
@@ -25,10 +24,8 @@ signals:
 
 private slots:
     void onTitleChanged(const QString& text);
-    void onTabContentChanged();
+    void onContentChanged();
     void onLanguageChanged(const QString& lang);
-    void onAddTab();
-    void onCloseTab(int index);
     void onAddTag();
     void onCopyContent();
     void autoSave();
@@ -37,18 +34,19 @@ private:
     void buildTagsBar();
     void rebuildTagChips();
     void scheduleAutoSave();
+    QFont makeMonoFont() const;
 
     Database*       m_db;
     Snippet         m_snippet;
     bool            m_loading = false;
+    bool            m_dirty   = false;
 
     QLineEdit*      m_titleEdit;
-    QTabWidget*     m_tabs;
+    QPlainTextEdit* m_editor;
     QComboBox*      m_langCombo;
     QWidget*        m_tagsBar;
     QHBoxLayout*    m_tagsLayout;
     QLineEdit*      m_tagInput;
     QLabel*         m_charCount;
     QTimer*         m_saveTimer;
-    bool            m_dirty = false;
 };
