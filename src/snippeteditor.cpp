@@ -1,4 +1,5 @@
 #include "snippeteditor.h"
+#include "appsettings.h"
 #include <QTimer>
 #include <QApplication>
 #include <QClipboard>
@@ -59,10 +60,15 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
     m_editor = new QPlainTextEdit(this);
     m_editor->setLineWrapMode(QPlainTextEdit::NoWrap);
     m_editor->setPlaceholderText("// Start typing your snippet…");
-    m_editor->setFont(makeMonoFont());
-    // Ensure cursor is always a text cursor — never an arrow
+    m_editor->setFont(AppSettings::instance().editorFont());
     m_editor->viewport()->setCursor(Qt::IBeamCursor);
     lay->addWidget(m_editor, 1);
+
+    // Live font updates from Settings dialog
+    connect(&AppSettings::instance(), &AppSettings::fontChanged,
+            this, [this](const QFont& f) {
+                m_editor->setFont(f);
+            });
 
     // ── Tags bar ─────────────────────────────────────────────
     buildTagsBar();
@@ -207,23 +213,6 @@ void SnippetEditor::autoSave()
 }
 
 // ─── Private helpers ─────────────────────────────────────────────────────────
-
-QFont SnippetEditor::makeMonoFont() const
-{
-    QFont f;
-    f.setStyleHint(QFont::Monospace);
-    f.setFixedPitch(true);
-    f.setPointSize(13);
-    static const QStringList preferred = {
-        "JetBrains Mono","Cascadia Code","Fira Code","Hack","Source Code Pro",
-        "Consolas","Courier New","monospace"
-    };
-    for (const QString& name : preferred) {
-        f.setFamily(name);
-        if (QFontInfo(f).fixedPitch()) break;
-    }
-    return f;
-}
 
 void SnippetEditor::buildTagsBar()
 {

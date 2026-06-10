@@ -13,6 +13,7 @@ find_package(Qt6 OPTIONAL_COMPONENTS WebEngineWidgets)
 set(SOURCES
     src/main.cpp
     src/mainwindow.cpp
+    src/appsettings.h
     src/sidebar.cpp
     src/snippeteditor.cpp
     src/snippetlist.cpp
@@ -29,10 +30,6 @@ set(SOURCES
     src/importexport.cpp
     resources/resources.qrc
 )
-
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_CXX_FLAGS_DEBUG "-g3 -O0 -fno-omit-frame-pointer -fno-inline")
-set(CMAKE_C_FLAGS_DEBUG   "-g3 -O0 -fno-omit-frame-pointer -fno-inline")
 
 qt_add_executable(snipQ ${SOURCES})
 

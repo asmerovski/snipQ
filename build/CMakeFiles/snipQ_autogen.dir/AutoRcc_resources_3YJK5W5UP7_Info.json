@@ -10,6 +10,7 @@
 	"INPUTS" : 
 	[
 		"/home/asmer/Projects/snipQ/resources/chevron-down.svg",
+		"/home/asmer/Projects/snipQ/resources/app.png",
 		"/home/asmer/Projects/snipQ/resources/chevron-right.svg"
 	],
 	"LOCK_FILE" : "/home/asmer/Projects/snipQ/build/CMakeFiles/snipQ_autogen.dir/AutoRcc_resources_3YJK5W5UP7_Lock.lock",

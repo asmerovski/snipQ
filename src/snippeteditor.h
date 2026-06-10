@@ -34,7 +34,6 @@ private:
     void buildTagsBar();
     void rebuildTagChips();
     void scheduleAutoSave();
-    QFont makeMonoFont() const;
 
     Database*       m_db;
     Snippet         m_snippet;

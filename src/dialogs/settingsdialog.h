@@ -2,7 +2,8 @@
 #include <QDialog>
 #include <QLineEdit>
 #include <QLabel>
-#include <QCheckBox>
+#include <QSpinBox>
+#include <QFontComboBox>
 #include "database.h"
 
 class SettingsDialog : public QDialog {
@@ -16,8 +17,13 @@ signals:
 private slots:
     void onBrowseStorage();
     void onMoveStorage();
+    void onFontFamilyChanged(const QFont& font);
+    void onFontSizeChanged(int size);
 
 private:
-    Database*  m_db;
-    QLineEdit* m_storagePath;
+    Database*     m_db;
+    QLineEdit*    m_storagePath;
+    QFontComboBox* m_fontCombo;
+    QSpinBox*     m_fontSizeSpin;
+    QLabel*       m_fontPreview;
 };

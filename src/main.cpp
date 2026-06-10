@@ -13,7 +13,7 @@ QApplication app(argc, argv);
     app.setApplicationName("snipQ");
     app.setOrganizationName("snipQ");
     app.setApplicationVersion("1.0.0");
-
+    app.setWindowIcon(QIcon(":/icons/app.png"));
     // Use Fusion base style for cross-platform consistency
     // app.setStyle(QStyleFactory::create("Fusion"));
 

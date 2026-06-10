@@ -3,6 +3,7 @@
 #include <QTreeWidget>
 #include <QVBoxLayout>
 #include <QLabel>
+#include <QSettings>
 #include "database.h"
 
 struct SidebarSelection {
@@ -27,10 +28,15 @@ signals:
 
 private slots:
     void onItemClicked(QTreeWidgetItem* item, int col);
+    void onItemExpanded(QTreeWidgetItem* item);
+    void onItemCollapsed(QTreeWidgetItem* item);
     void onContextMenu(const QPoint& pos);
 
 private:
     void buildTree();
+    void saveExpandState();
+    void restoreExpandState();
+    void updateSectionLabel(QTreeWidgetItem* section);
 
     Database*        m_db;
     QTreeWidget*     m_tree;
@@ -41,4 +47,6 @@ private:
     QTreeWidgetItem* m_allItem     = nullptr;
     QTreeWidgetItem* m_favItem     = nullptr;
     QTreeWidgetItem* m_binItem     = nullptr;
+
+    QSettings        m_settings;
 };

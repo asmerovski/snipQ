@@ -14,9 +14,7 @@ public:
     SnippetListItem(const Snippet& s, QWidget* parent = nullptr)
         : QWidget(parent)
     {
-        // Ensure we always show a pointer, never a text-entry cursor
         setCursor(Qt::PointingHandCursor);
-        setAttribute(Qt::WA_TransparentForMouseEvents, false);
 
         auto* lay = new QVBoxLayout(this);
         lay->setContentsMargins(12, 8, 12, 8);
@@ -34,7 +32,6 @@ public:
         nameLabel->setStyleSheet(
             "font-weight:600; font-size:13px; color:#c9d1d9; background:transparent;");
         nameLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        // Labels must NOT steal mouse — otherwise hovering triggers IBeam cursor
         nameLabel->setAttribute(Qt::WA_TransparentForMouseEvents, true);
         top->addWidget(nameLabel, 1);
 
@@ -98,7 +95,7 @@ SnippetList::SnippetList(Database* db, QWidget* parent)
     lay->setContentsMargins(0, 0, 0, 0);
     lay->setSpacing(0);
 
-    // Header row
+    // ── Header row ───────────────────────────────────────────
     auto* headerRow = new QHBoxLayout;
     headerRow->setContentsMargins(12, 10, 8, 4);
     m_header = new QLabel("All Snippets", this);
@@ -117,30 +114,56 @@ SnippetList::SnippetList(Database* db, QWidget* parent)
     headerRow->addWidget(addBtn);
     lay->addLayout(headerRow);
 
+    // ── Search ───────────────────────────────────────────────
     m_search = new QLineEdit(this);
     m_search->setObjectName("SnippetListSearch");
     m_search->setPlaceholderText("Search snippets\u2026");
     m_search->setClearButtonEnabled(true);
     lay->addWidget(m_search);
 
+    // ── Sort row ─────────────────────────────────────────────
+    auto* sortRow = new QHBoxLayout;
+    sortRow->setContentsMargins(8, 4, 8, 4);
+    sortRow->setSpacing(6);
+
+    auto* sortLabel = new QLabel("Sort:", this);
+    sortLabel->setStyleSheet("color:#484f58; font-size:11px;");
+    sortRow->addWidget(sortLabel);
+
+    m_sortCombo = new QComboBox(this);
+    m_sortCombo->addItem("Name",    SortName);
+    m_sortCombo->addItem("Created", SortCreated);
+    m_sortCombo->addItem("Size",    SortSize);
+    m_sortCombo->setStyleSheet(
+        "QComboBox { background:#161b22; border:1px solid #30363d; border-radius:4px;"
+        "padding:2px 6px; font-size:11px; color:#8b949e; min-width:80px; }"
+        "QComboBox::drop-down { border:none; width:16px; }"
+        "QComboBox QAbstractItemView { background:#161b22; border:1px solid #30363d;"
+        "selection-background-color:#1f3352; }");
+    sortRow->addWidget(m_sortCombo);
+    sortRow->addStretch();
+    lay->addLayout(sortRow);
+
+    // ── List ─────────────────────────────────────────────────
     m_list = new QListWidget(this);
     m_list->setContextMenuPolicy(Qt::CustomContextMenu);
-    // Ensure the list itself uses a pointer cursor, not an IBeam
     m_list->setCursor(Qt::PointingHandCursor);
     m_list->viewport()->setCursor(Qt::PointingHandCursor);
     lay->addWidget(m_list);
 
-    connect(m_list,   &QListWidget::currentRowChanged,
-            this,     &SnippetList::onCurrentRowChanged);
-    connect(m_search, &QLineEdit::textChanged,
-            this,     &SnippetList::onSearchChanged);
-    connect(m_list,   &QListWidget::customContextMenuRequested,
-            this,     &SnippetList::onContextMenu);
+    connect(m_list,     &QListWidget::currentRowChanged,
+            this,       &SnippetList::onCurrentRowChanged);
+    connect(m_search,   &QLineEdit::textChanged,
+            this,       &SnippetList::onSearchChanged);
+    connect(m_sortCombo, qOverload<int>(&QComboBox::currentIndexChanged),
+            this,        &SnippetList::onSortChanged);
+    connect(m_list,     &QListWidget::customContextMenuRequested,
+            this,       &SnippetList::onContextMenu);
 }
 
 void SnippetList::loadFor(const SidebarSelection& sel)
 {
-    m_sel  = sel;
+    m_sel   = sel;
     m_isBin = (sel.type == SidebarSelection::Bin);
     refresh();
 }
@@ -163,46 +186,63 @@ void SnippetList::refresh()
         {SidebarSelection::Bin,         "Bin"},
         {SidebarSelection::Folder,      "Folder"},
     };
-    if (m_sel.type == SidebarSelection::Tag)
-        m_header->setText(QStringLiteral("# ") + m_sel.tag);
-    else
-        m_header->setText(headers.value((int)m_sel.type, "Snippets"));
+    m_header->setText(
+        m_sel.type == SidebarSelection::Tag
+            ? QStringLiteral("# ") + m_sel.tag
+            : headers.value((int)m_sel.type, "Snippets"));
 
     filterList(m_search->text());
 }
 
+QList<Snippet> SnippetList::sortedSnippets(QList<Snippet> list) const
+{
+    switch (m_sortMode) {
+        case SortName:
+            std::sort(list.begin(), list.end(), [](const Snippet& a, const Snippet& b) {
+                return a.name.toLower() < b.name.toLower();
+            });
+            break;
+        case SortCreated:
+            std::sort(list.begin(), list.end(), [](const Snippet& a, const Snippet& b) {
+                return a.createdAt > b.createdAt;   // newest first
+            });
+            break;
+        case SortSize:
+            std::sort(list.begin(), list.end(), [](const Snippet& a, const Snippet& b) {
+                return a.content.length() > b.content.length();   // largest first
+            });
+            break;
+    }
+    return list;
+}
+
 void SnippetList::populateList(const QList<Snippet>& snippets)
 {
-    // ── Preserve both selected id and scroll position ────────
-    int selId    = -1;
-    int scrollY  = m_list->verticalScrollBar()->value();
+    int selId   = -1;
+    int scrollY = m_list->verticalScrollBar()->value();
     if (auto* cur = m_list->currentItem())
         selId = cur->data(RoleSnippetId).toInt();
 
-    // Block signals: prevents currentRowChanged from firing on
-    // half-built items, and stops the list from jumping to row 0
     m_list->blockSignals(true);
     m_list->clear();
 
     QListWidgetItem* toSelect = nullptr;
-    for (const Snippet& s : snippets) {
+    for (const Snippet& s : sortedSnippets(snippets)) {
         auto* item = new QListWidgetItem();
         item->setData(RoleSnippetId, s.id);
         item->setSizeHint(QSize(0, 68));
-        m_list->addItem(item);                         // add BEFORE setItemWidget
+        m_list->addItem(item);
         m_list->setItemWidget(item, new SnippetListItem(s, nullptr));
         if (s.id == selId) toSelect = item;
     }
 
     m_list->blockSignals(false);
 
-    // Restore selection without scrolling to it
     if (toSelect) {
         QSignalBlocker sb(m_list);
         m_list->setCurrentItem(toSelect);
     }
 
-    // Restore scroll position — must happen after items are built
     m_list->verticalScrollBar()->setValue(scrollY);
 }
 
@@ -234,6 +274,12 @@ void SnippetList::onSearchChanged(const QString& text)
     filterList(text);
 }
 
+void SnippetList::onSortChanged(int /*index*/)
+{
+    m_sortMode = static_cast<SortMode>(m_sortCombo->currentData().toInt());
+    filterList(m_search->text());
+}
+
 void SnippetList::onContextMenu(const QPoint& pos)
 {
     auto* item = m_list->itemAt(pos);
@@ -241,7 +287,7 @@ void SnippetList::onContextMenu(const QPoint& pos)
     int sid = item->data(RoleSnippetId).toInt();
 
     QMenu menu(this);
-    auto* actFav     = menu.addAction("Toggle Favourite");
+    auto* actFav    = menu.addAction("Toggle Favourite");
     menu.addSeparator();
     QAction* actRestore = nullptr;
     QAction* actDelete  = nullptr;
@@ -256,7 +302,7 @@ void SnippetList::onContextMenu(const QPoint& pos)
     auto* chosen = menu.exec(m_list->viewport()->mapToGlobal(pos));
     if (!chosen) return;
 
-    if (chosen == actFav)                       emit toggleFavoriteRequested(sid);
-    if (actRestore && chosen == actRestore)     emit restoreSnippetRequested(sid);
-    if (actDelete  && chosen == actDelete)      emit deleteSnippetRequested(sid);
+    if (chosen == actFav)                   emit toggleFavoriteRequested(sid);
+    if (actRestore && chosen == actRestore) emit restoreSnippetRequested(sid);
+    if (actDelete  && chosen == actDelete)  emit deleteSnippetRequested(sid);
 }

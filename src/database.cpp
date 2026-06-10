@@ -17,7 +17,7 @@ Database::~Database() { close(); }
 
 bool Database::open(const QString& path) {
     m_path = path;
-    QString connName = QStringLiteral("masssnip_%1").arg(m_connectionId);
+    QString connName = QStringLiteral("snipQ_%1").arg(m_connectionId);
     m_db = QSqlDatabase::addDatabase("QSQLITE", connName);
     m_db.setDatabaseName(path);
     if (!m_db.open()) {
