@@ -1,32 +1,191 @@
 #include "sidebar.h"
+#include <QPainter>
+#include <QMouseEvent>
+#include <QContextMenuEvent>
+#include <QEnterEvent>
 #include <QMenu>
-#include <QHeaderView>
+#include <QScrollArea>
+#include <QLabel>
 
-static const int RoleType     = Qt::UserRole + 1;
-static const int RoleFolderId = Qt::UserRole + 2;
-static const int RoleTagName  = Qt::UserRole + 3;
-static const int RoleSection  = Qt::UserRole + 4; // section key for settings
+// ═══════════════════════════════════════════════════════════════════════════
+// SidebarItem
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Section header item — selectable so it receives click events for toggling
-static QTreeWidgetItem* makeSectionItem(const QString& key, bool expanded) {
-    auto* item = new QTreeWidgetItem();
-    item->setData(0, RoleType,    QString("section"));
-    item->setData(0, RoleSection, key);
-    // Clickable but not selectable as a snippet target
-    item->setFlags(Qt::ItemIsEnabled);
-    item->setForeground(0, QColor("#484f58"));
+SidebarItem::SidebarItem(const QString& label,
+                         const QString& itemType,
+                         QWidget* parent)
+    : QWidget(parent), m_type(itemType)
+{
+    setCursor(Qt::PointingHandCursor);
+    setFixedHeight(26);
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-    QFont f;
-    f.setPointSizeF(f.pointSizeF() * 0.8);
-    f.setLetterSpacing(QFont::AbsoluteSpacing, 1.5);
-    item->setFont(0, f);
+    // Lay out an icon label + text label so text is accessible
+    auto* lay = new QHBoxLayout(this);
+    lay->setContentsMargins(20, 0, 8, 0);
+    lay->setSpacing(0);
 
-    // Chevron + label — updated by updateSectionLabel()
-    Q_UNUSED(expanded)
-    return item;
+    auto* lbl = new QLabel(label, this);
+    lbl->setStyleSheet("background:transparent; color:inherit;");
+    lbl->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    lbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    lay->addWidget(lbl);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+void SidebarItem::setSelected(bool on)
+{
+    m_selected = on;
+    update();
+}
+
+void SidebarItem::mousePressEvent(QMouseEvent* e)
+{
+    if (e->button() == Qt::LeftButton) {
+        // handled on release
+    }
+    QWidget::mousePressEvent(e);
+}
+
+void SidebarItem::mouseReleaseEvent(QMouseEvent* e)
+{
+    if (e->button() == Qt::LeftButton &&
+        rect().contains(e->pos()))
+        emit clicked(this);
+    QWidget::mouseReleaseEvent(e);
+}
+
+void SidebarItem::contextMenuEvent(QContextMenuEvent* e)
+{
+    emit contextMenuRequested(this, e->globalPos());
+}
+
+void SidebarItem::enterEvent(QEnterEvent* e)
+{
+    m_hovered = true;
+    update();
+    QWidget::enterEvent(e);
+}
+
+void SidebarItem::leaveEvent(QEvent* e)
+{
+    m_hovered = false;
+    update();
+    QWidget::leaveEvent(e);
+}
+
+void SidebarItem::paintEvent(QPaintEvent*)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    if (m_selected) {
+        p.fillRect(rect(), QColor("#1f3352"));
+        // left accent bar
+        p.fillRect(0, 0, 3, height(), QColor("#388bfd"));
+    } else if (m_hovered) {
+        p.fillRect(rect(), QColor("#21262d"));
+    }
+
+    // Text is handled by child QLabel — nothing more needed
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SidebarSection
+// ═══════════════════════════════════════════════════════════════════════════
+
+SidebarSection::SidebarSection(const QString& title,
+                               const QString& key,
+                               QSettings*     settings,
+                               QWidget*       parent)
+    : QWidget(parent), m_key(key), m_settings(settings)
+{
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    auto* outerLay = new QVBoxLayout(this);
+    outerLay->setContentsMargins(0, 0, 0, 0);
+    outerLay->setSpacing(0);
+
+    // ── Section header button ────────────────────────────────
+    m_header = new QToolButton(this);
+    m_header->setText(title);
+    m_header->setCheckable(false);
+    m_header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_header->setFixedHeight(22);
+    m_header->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    m_header->setArrowType(Qt::DownArrow);   // updated by updateChevron()
+    m_header->setStyleSheet(R"(
+        QToolButton {
+            background: #1c2128;
+            color: #8b949e;
+            border: none;
+            border-top: 1px solid #21262d;
+            border-bottom: 1px solid #21262d;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-align: left;
+            padding-left: 4px;
+        }
+        QToolButton:hover { background: #21262d; color: #c9d1d9; }
+    )");
+    outerLay->addWidget(m_header);
+
+    // ── Collapsible body ─────────────────────────────────────
+    m_body = new QWidget(this);
+    m_body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_bodyLayout = new QVBoxLayout(m_body);
+    m_bodyLayout->setContentsMargins(0, 0, 0, 0);
+    m_bodyLayout->setSpacing(0);
+    outerLay->addWidget(m_body);
+
+    connect(m_header, &QToolButton::clicked, this, &SidebarSection::toggle);
+
+    // Restore collapse state
+    bool expanded = m_settings->value(
+        QStringLiteral("sidebar/expanded/") + key, true).toBool();
+    m_body->setVisible(expanded);
+    updateChevron();
+}
+
+void SidebarSection::addItem(SidebarItem* item)
+{
+    m_items << item;
+    m_bodyLayout->addWidget(item);
+}
+
+void SidebarSection::clearItems()
+{
+    for (auto* w : m_items) {
+        m_bodyLayout->removeWidget(w);
+        w->deleteLater();
+    }
+    m_items.clear();
+}
+
+bool SidebarSection::isExpanded() const
+{
+    return m_body->isVisible();
+}
+
+void SidebarSection::toggle()
+{
+    bool nowVisible = !m_body->isVisible();
+    m_body->setVisible(nowVisible);
+    m_settings->setValue(
+        QStringLiteral("sidebar/expanded/") + m_key, nowVisible);
+    updateChevron();
+    // Notify parent to recalculate size
+    if (parentWidget()) parentWidget()->adjustSize();
+}
+
+void SidebarSection::updateChevron()
+{
+    m_header->setArrowType(
+        m_body->isVisible() ? Qt::DownArrow : Qt::RightArrow);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Sidebar
+// ═══════════════════════════════════════════════════════════════════════════
 
 Sidebar::Sidebar(Database* db, QWidget* parent)
     : QWidget(parent), m_db(db),
@@ -34,251 +193,201 @@ Sidebar::Sidebar(Database* db, QWidget* parent)
 {
     setObjectName("Sidebar");
 
-    auto* lay = new QVBoxLayout(this);
-    lay->setContentsMargins(0, 0, 0, 0);
-    lay->setSpacing(0);
+    auto* outerLay = new QVBoxLayout(this);
+    outerLay->setContentsMargins(0, 0, 0, 0);
+    outerLay->setSpacing(0);
 
-    auto* header = new QLabel("  \u2b21  snipQ", this);
-    header->setStyleSheet("font-size:14px; font-weight:700; color:#58a6ff;"
-                          "padding:14px 12px 10px 12px; letter-spacing:1px;");
-    lay->addWidget(header);
+    // App title
+    auto* titleLabel = new QLabel("  \u2b21  snipQ", this);
+    titleLabel->setStyleSheet(
+        "font-size:14px; font-weight:700; color:#58a6ff;"
+        "padding:14px 12px 10px 12px; letter-spacing:1px;"
+        "background:#161b22; border-bottom:1px solid #21262d;");
+    outerLay->addWidget(titleLabel);
 
-    m_tree = new QTreeWidget(this);
-    m_tree->setHeaderHidden(true);
-    m_tree->setRootIsDecorated(false);   // we draw our own chevrons
-    m_tree->setAnimated(true);
-    m_tree->setExpandsOnDoubleClick(false);
-    m_tree->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_tree->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_tree->setIndentation(18);
-    lay->addWidget(m_tree);
+    // Scroll area wrapping all sections
+    auto* scroll = new QScrollArea(this);
+    scroll->setWidgetResizable(true);
+    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll->setFrameShape(QFrame::NoFrame);
+    scroll->setStyleSheet("QScrollArea { background: transparent; border: none; }");
 
-    connect(m_tree, &QTreeWidget::itemClicked,
-            this,   &Sidebar::onItemClicked);
-    connect(m_tree, &QTreeWidget::itemExpanded,
-            this,   &Sidebar::onItemExpanded);
-    connect(m_tree, &QTreeWidget::itemCollapsed,
-            this,   &Sidebar::onItemCollapsed);
-    connect(m_tree, &QTreeWidget::customContextMenuRequested,
-            this,   &Sidebar::onContextMenu);
+    auto* container = new QWidget(scroll);
+    container->setObjectName("SidebarContainer");
+    container->setStyleSheet("QWidget#SidebarContainer { background:#161b22; }");
+    m_layout = new QVBoxLayout(container);
+    m_layout->setContentsMargins(0, 0, 0, 0);
+    m_layout->setSpacing(0);
+    m_layout->addStretch(1);   // pushes sections to top
 
-    buildTree();
+    scroll->setWidget(container);
+    outerLay->addWidget(scroll, 1);
 
-    if (m_allItem)
-        m_tree->setCurrentItem(m_allItem);
+    build();
 }
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 
 void Sidebar::refresh()
 {
-    // Remember current selection
-    auto* prev = m_tree->currentItem();
-    QVariant prevType;
-    int      prevFold = -1;
-    QString  prevTag;
-    if (prev) {
-        prevType = prev->data(0, RoleType);
-        prevFold = prev->data(0, RoleFolderId).toInt();
-        prevTag  = prev->data(0, RoleTagName).toString();
+    // Save current selection identity before rebuild
+    if (m_selected) {
+        m_selType     = m_selected->itemType();
+        m_selFolderId = m_selected->payload().toInt();
+        m_selTag      = m_selected->payload().toString();
     }
 
-    buildTree();   // expand state is restored inside buildTree
+    build();
 
     // Restore selection
-    if (prevType.isValid()) {
-        QString t = prevType.toString();
-        QTreeWidgetItemIterator it(m_tree);
-        while (*it) {
-            QString itype = (*it)->data(0, RoleType).toString();
-            if (t == "folder" && itype == "folder" &&
-                (*it)->data(0, RoleFolderId).toInt() == prevFold) {
-                m_tree->setCurrentItem(*it); return;
-            }
-            if (t == "tag" && itype == "tag" &&
-                (*it)->data(0, RoleTagName).toString() == prevTag) {
-                m_tree->setCurrentItem(*it); return;
-            }
-            ++it;
+    auto trySelect = [&](SidebarSection* sec) {
+        if (!sec) return;
+        for (auto* item : sec->items()) {
+            QString t = item->itemType();
+            bool match = false;
+            if (t == m_selType && t != "folder" && t != "tag") match = true;
+            if (t == "folder" && m_selType == "folder" &&
+                item->payload().toInt() == m_selFolderId)   match = true;
+            if (t == "tag"    && m_selType == "tag"    &&
+                item->payload().toString() == m_selTag)     match = true;
+            if (match) { selectItem(item); return; }
         }
-    }
-    if (m_allItem) m_tree->setCurrentItem(m_allItem);
+    };
+    trySelect(m_libSection);
+    trySelect(m_foldSection);
+    trySelect(m_tagSection);
 }
 
 // ─── Private ─────────────────────────────────────────────────────────────────
 
-void Sidebar::buildTree()
+static SidebarItem* makeItem(const QString& icon,
+                             const QString& label,
+                             const QString& type,
+                             QWidget* parent = nullptr)
 {
-    m_tree->clear();
-    m_libSection = m_foldSection = m_tagSection = nullptr;
-    m_allItem = m_favItem = m_binItem = nullptr;
+    return new SidebarItem(icon + "  " + label, type, parent);
+}
+
+void Sidebar::build()
+{
+    // Remove existing sections from layout (but not the stretch)
+    auto removeSection = [&](SidebarSection*& sec) {
+        if (sec) {
+            m_layout->removeWidget(sec);
+            sec->deleteLater();
+            sec = nullptr;
+        }
+    };
+    removeSection(m_libSection);
+    removeSection(m_foldSection);
+    removeSection(m_tagSection);
+    m_selected = nullptr;
+
+    // Insert sections before the stretch (index = count-1)
+    int insertPos = m_layout->count() - 1;
 
     // ── LIBRARY ──────────────────────────────────────────────
-    m_libSection = makeSectionItem("lib", true);
-    m_tree->addTopLevelItem(m_libSection);
+    m_libSection = new SidebarSection("LIBRARY", "lib", &m_settings, this);
 
-    m_favItem = new QTreeWidgetItem(m_libSection);
-    m_favItem->setText(0, "  \u2605  Favourites");
-    m_favItem->setData(0, RoleType, "lib_fav");
-    m_favItem->setForeground(0, QColor("#e3b341"));
-    m_favItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+    auto* favItem = makeItem("\u2605", "Favourites", "lib_fav");
+    favItem->findChild<QLabel*>()->setStyleSheet(
+        "background:transparent; color:#e3b341;");
+    connect(favItem, &SidebarItem::clicked,
+            this, [this](SidebarItem* i){ onItemClicked(i); });
+    m_libSection->addItem(favItem);
 
-    m_allItem = new QTreeWidgetItem(m_libSection);
-    m_allItem->setText(0, "  \u25c8  All Snippets");
-    m_allItem->setData(0, RoleType, "lib_all");
-    m_allItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+    auto* allItem = makeItem("\u25c8", "All Snippets", "lib_all");
+    connect(allItem, &SidebarItem::clicked,
+            this, [this](SidebarItem* i){ onItemClicked(i); });
+    m_libSection->addItem(allItem);
 
-    m_binItem = new QTreeWidgetItem(m_libSection);
-    m_binItem->setText(0, "  \u2297  Bin");
-    m_binItem->setData(0, RoleType, "bin");
-    m_binItem->setForeground(0, QColor("#6e7681"));
-    m_binItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+    auto* binItem = makeItem("\u2297", "Bin", "bin");
+    binItem->findChild<QLabel*>()->setStyleSheet(
+        "background:transparent; color:#6e7681;");
+    connect(binItem, &SidebarItem::clicked,
+            this, [this](SidebarItem* i){ onItemClicked(i); });
+    m_libSection->addItem(binItem);
+
+    m_layout->insertWidget(insertPos++, m_libSection);
 
     // ── FOLDERS ───────────────────────────────────────────────
-    m_foldSection = makeSectionItem("folders", true);
-    m_tree->addTopLevelItem(m_foldSection);
+    m_foldSection = new SidebarSection("FOLDERS", "folders", &m_settings, this);
 
-    auto folders = m_db->allFolders();
-    QMap<int, QTreeWidgetItem*> foldMap;
-    for (auto& f : folders) {
-        QTreeWidgetItem* parentItem = (f.parentId > 0)
-            ? foldMap.value(f.parentId, m_foldSection)
-            : m_foldSection;
-        auto* item = new QTreeWidgetItem(parentItem);
-        item->setText(0, "  \u25b8  " + f.name);
-        item->setData(0, RoleType, "folder");
-        item->setData(0, RoleFolderId, f.id);
-        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-        foldMap[f.id] = item;
+    for (const Folder& f : m_db->allFolders()) {
+        auto* item = makeItem("\u25b8", f.name, "folder");
+        item->setPayload(f.id);
+        connect(item, &SidebarItem::clicked,
+                this, [this](SidebarItem* i){ onItemClicked(i); });
+        connect(item, &SidebarItem::contextMenuRequested,
+                this, [this](SidebarItem* i, const QPoint& p){
+                    onItemContextMenu(i, p); });
+        m_foldSection->addItem(item);
     }
+
+    m_layout->insertWidget(insertPos++, m_foldSection);
 
     // ── TAGS ──────────────────────────────────────────────────
-    m_tagSection = makeSectionItem("tags", true);
-    m_tree->addTopLevelItem(m_tagSection);
+    m_tagSection = new SidebarSection("TAGS", "tags", &m_settings, this);
 
     for (const QString& tag : m_db->allTags()) {
-        auto* item = new QTreeWidgetItem(m_tagSection);
-        item->setText(0, "  #  " + tag);
-        item->setData(0, RoleType, "tag");
-        item->setData(0, RoleTagName, tag);
-        item->setForeground(0, QColor("#58a6ff"));
-        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        auto* item = makeItem("#", tag, "tag");
+        item->setPayload(tag);
+        item->findChild<QLabel*>()->setStyleSheet(
+            "background:transparent; color:#58a6ff;");
+        connect(item, &SidebarItem::clicked,
+                this, [this](SidebarItem* i){ onItemClicked(i); });
+        m_tagSection->addItem(item);
     }
 
-    // Restore expand/collapse state from settings, then update labels
-    restoreExpandState();
+    m_layout->insertWidget(insertPos++, m_tagSection);
+
+    // Default selection: All Snippets
+    if (!m_selType.isEmpty()) return;  // will be restored by caller
+    selectItem(allItem);
+    emit selectionChanged(SidebarSelection{SidebarSelection::AllSnippets});
 }
 
-void Sidebar::updateSectionLabel(QTreeWidgetItem* section)
+void Sidebar::selectItem(SidebarItem* item)
 {
-    if (!section) return;
-    bool expanded = section->isExpanded();
-    QString key = section->data(0, RoleSection).toString();
-
-    QString chevron = expanded ? "\u25bc" : "\u25b6";   // ▼ / ▶
-    QString label;
-    if      (key == "lib")     label = "LIBRARY";
-    else if (key == "folders") label = "FOLDERS";
-    else if (key == "tags")    label = "TAGS";
-
-    section->setText(0, QStringLiteral("  %1  %2").arg(chevron, label));
+    if (m_selected && m_selected != item)
+        m_selected->setSelected(false);
+    m_selected = item;
+    if (item) item->setSelected(true);
 }
 
-void Sidebar::saveExpandState()
+void Sidebar::onItemClicked(SidebarItem* item)
 {
-    auto save = [&](QTreeWidgetItem* item, const QString& key) {
-        if (item) m_settings.setValue("sidebar/expanded/" + key, item->isExpanded());
-    };
-    save(m_libSection,  "lib");
-    save(m_foldSection, "folders");
-    save(m_tagSection,  "tags");
-}
-
-void Sidebar::restoreExpandState()
-{
-    auto restore = [&](QTreeWidgetItem* item, const QString& key) {
-        if (!item) return;
-        bool expanded = m_settings.value("sidebar/expanded/" + key, true).toBool();
-        item->setExpanded(expanded);
-        updateSectionLabel(item);
-    };
-    restore(m_libSection,  "lib");
-    restore(m_foldSection, "folders");
-    restore(m_tagSection,  "tags");
-}
-
-// ─── Slots ───────────────────────────────────────────────────────────────────
-
-void Sidebar::onItemClicked(QTreeWidgetItem* item, int /*col*/)
-{
-    if (!item) return;
-    QString type = item->data(0, RoleType).toString();
-
-    // Section header clicked → toggle expand/collapse
-    if (type == "section") {
-        item->setExpanded(!item->isExpanded());
-        updateSectionLabel(item);
-        saveExpandState();
-        return;
-    }
+    selectItem(item);
 
     SidebarSelection sel;
-    if      (type == "lib_all") sel.type = SidebarSelection::AllSnippets;
-    else if (type == "lib_fav") sel.type = SidebarSelection::Favourites;
-    else if (type == "bin")     sel.type = SidebarSelection::Bin;
-    else if (type == "folder") {
+    QString t = item->itemType();
+    if      (t == "lib_all") sel.type = SidebarSelection::AllSnippets;
+    else if (t == "lib_fav") sel.type = SidebarSelection::Favourites;
+    else if (t == "bin")     sel.type = SidebarSelection::Bin;
+    else if (t == "folder") {
         sel.type     = SidebarSelection::Folder;
-        sel.folderId = item->data(0, RoleFolderId).toInt();
-    } else if (type == "tag") {
+        sel.folderId = item->payload().toInt();
+    } else if (t == "tag") {
         sel.type = SidebarSelection::Tag;
-        sel.tag  = item->data(0, RoleTagName).toString();
-    } else {
-        return;
+        sel.tag  = item->payload().toString();
     }
     emit selectionChanged(sel);
 }
 
-void Sidebar::onItemExpanded(QTreeWidgetItem* item)
+void Sidebar::onItemContextMenu(SidebarItem* item, const QPoint& globalPos)
 {
-    if (item->data(0, RoleType).toString() == "section") {
-        updateSectionLabel(item);
-        saveExpandState();
-    }
-}
+    if (item->itemType() != "folder") return;
+    int fid = item->payload().toInt();
 
-void Sidebar::onItemCollapsed(QTreeWidgetItem* item)
-{
-    if (item->data(0, RoleType).toString() == "section") {
-        updateSectionLabel(item);
-        saveExpandState();
-    }
-}
-
-void Sidebar::onContextMenu(const QPoint& pos)
-{
-    auto* item = m_tree->itemAt(pos);
     QMenu menu(this);
+    auto* actRename = menu.addAction("Rename Folder");
+    auto* actDelete = menu.addAction("Delete Folder");
+    menu.addSeparator();
+    auto* actNew    = menu.addAction("New Subfolder");
 
-    auto* actNewFolder = menu.addAction("New Folder");
-    QAction* actRename = nullptr;
-    QAction* actDelete = nullptr;
-
-    if (item && item->data(0, RoleType).toString() == "folder") {
-        int fid = item->data(0, RoleFolderId).toInt();
-        menu.addSeparator();
-        actRename = menu.addAction("Rename Folder");
-        actDelete = menu.addAction("Delete Folder");
-        actRename->setProperty("folderId", fid);
-        actDelete->setProperty("folderId", fid);
-    }
-
-    int parentFid = (item && item->data(0, RoleType).toString() == "folder")
-        ? item->data(0, RoleFolderId).toInt() : -1;
-
-    auto* chosen = menu.exec(m_tree->viewport()->mapToGlobal(pos));
+    auto* chosen = menu.exec(globalPos);
     if (!chosen) return;
-
-    if (chosen == actNewFolder)                       emit newFolderRequested(parentFid);
-    else if (actRename && chosen == actRename)        emit renameFolderRequested(actRename->property("folderId").toInt());
-    else if (actDelete && chosen == actDelete)        emit deleteFolderRequested(actDelete->property("folderId").toInt());
+    if (chosen == actRename) emit renameFolderRequested(fid);
+    if (chosen == actDelete) emit deleteFolderRequested(fid);
+    if (chosen == actNew)    emit newFolderRequested(fid);
 }

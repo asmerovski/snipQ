@@ -4,11 +4,11 @@
 #include "theme.h"
 
 int main(int argc, char* argv[]) {
-
+    // ── Must be set BEFORE QApplication is constructed ──
     QApplication::setHighDpiScaleFactorRoundingPolicy(
-    Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+        Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
 
-QApplication app(argc, argv);
+    QApplication app(argc, argv);
 
     app.setApplicationName("snipQ");
     app.setOrganizationName("snipQ");

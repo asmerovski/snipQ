@@ -29,22 +29,26 @@ private slots:
     void onCurrentRowChanged(int row);
     void onSearchChanged(const QString& text);
     void onSortChanged(int index);
+    void onToggleDirection();
     void onContextMenu(const QPoint& pos);
 
 private:
-    enum SortMode { SortName, SortCreated, SortSize };
+    enum SortMode { SortName, SortCreated, SortModified, SortSize };
 
     void populateList(const QList<Snippet>& snippets);
     void filterList(const QString& query);
     QList<Snippet> sortedSnippets(QList<Snippet> list) const;
+    void updateDirectionButton();
 
     Database*        m_db;
     QListWidget*     m_list;
     QLineEdit*       m_search;
     QLabel*          m_header;
     QComboBox*       m_sortCombo;
+    QToolButton*     m_dirBtn;       // ↑ / ↓ toggle
     QList<Snippet>   m_snippets;
     SidebarSelection m_sel;
-    SortMode         m_sortMode = SortName;
-    bool             m_isBin    = false;
+    SortMode         m_sortMode  = SortName;
+    bool             m_ascending = true;
+    bool             m_isBin     = false;
 };

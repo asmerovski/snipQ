@@ -124,23 +124,37 @@ SnippetList::SnippetList(Database* db, QWidget* parent)
     // ── Sort row ─────────────────────────────────────────────
     auto* sortRow = new QHBoxLayout;
     sortRow->setContentsMargins(8, 4, 8, 4);
-    sortRow->setSpacing(6);
+    sortRow->setSpacing(4);
 
     auto* sortLabel = new QLabel("Sort:", this);
     sortLabel->setStyleSheet("color:#484f58; font-size:11px;");
     sortRow->addWidget(sortLabel);
 
     m_sortCombo = new QComboBox(this);
-    m_sortCombo->addItem("Name",    SortName);
-    m_sortCombo->addItem("Created", SortCreated);
-    m_sortCombo->addItem("Size",    SortSize);
+    m_sortCombo->addItem("Name",     SortName);
+    m_sortCombo->addItem("Created",  SortCreated);
+    m_sortCombo->addItem("Modified", SortModified);
+    m_sortCombo->addItem("Size",     SortSize);
     m_sortCombo->setStyleSheet(
-        "QComboBox { background:#161b22; border:1px solid #30363d; border-radius:4px;"
-        "padding:2px 6px; font-size:11px; color:#8b949e; min-width:80px; }"
-        "QComboBox::drop-down { border:none; width:16px; }"
-        "QComboBox QAbstractItemView { background:#161b22; border:1px solid #30363d;"
-        "selection-background-color:#1f3352; }");
+        "QComboBox{background:#161b22;border:1px solid #30363d;border-radius:4px;"
+        "padding:2px 6px;font-size:11px;color:#8b949e;min-width:80px;}"
+        "QComboBox::drop-down{border:none;width:16px;}"
+        "QComboBox QAbstractItemView{background:#161b22;border:1px solid #30363d;"
+        "selection-background-color:#1f3352;}");
     sortRow->addWidget(m_sortCombo);
+
+    // Asc / Desc toggle button
+    m_dirBtn = new QToolButton(this);
+    m_dirBtn->setToolTip("Toggle sort direction");
+    m_dirBtn->setStyleSheet(
+        "QToolButton{background:#161b22;border:1px solid #30363d;border-radius:4px;"
+        "color:#8b949e;font-size:12px;padding:2px 6px;}"
+        "QToolButton:hover{background:#21262d;color:#c9d1d9;}");
+    updateDirectionButton();
+    connect(m_dirBtn, &QToolButton::clicked,
+            this,     &SnippetList::onToggleDirection);
+    sortRow->addWidget(m_dirBtn);
+
     sortRow->addStretch();
     lay->addLayout(sortRow);
 
@@ -151,14 +165,14 @@ SnippetList::SnippetList(Database* db, QWidget* parent)
     m_list->viewport()->setCursor(Qt::PointingHandCursor);
     lay->addWidget(m_list);
 
-    connect(m_list,     &QListWidget::currentRowChanged,
-            this,       &SnippetList::onCurrentRowChanged);
-    connect(m_search,   &QLineEdit::textChanged,
-            this,       &SnippetList::onSearchChanged);
+    connect(m_list,      &QListWidget::currentRowChanged,
+            this,        &SnippetList::onCurrentRowChanged);
+    connect(m_search,    &QLineEdit::textChanged,
+            this,        &SnippetList::onSearchChanged);
     connect(m_sortCombo, qOverload<int>(&QComboBox::currentIndexChanged),
             this,        &SnippetList::onSortChanged);
-    connect(m_list,     &QListWidget::customContextMenuRequested,
-            this,       &SnippetList::onContextMenu);
+    connect(m_list,      &QListWidget::customContextMenuRequested,
+            this,        &SnippetList::onContextMenu);
 }
 
 void SnippetList::loadFor(const SidebarSelection& sel)
@@ -196,23 +210,23 @@ void SnippetList::refresh()
 
 QList<Snippet> SnippetList::sortedSnippets(QList<Snippet> list) const
 {
-    switch (m_sortMode) {
-        case SortName:
-            std::sort(list.begin(), list.end(), [](const Snippet& a, const Snippet& b) {
+    auto cmp = [&](const Snippet& a, const Snippet& b) -> bool {
+        switch (m_sortMode) {
+            case SortName:
                 return a.name.toLower() < b.name.toLower();
-            });
-            break;
-        case SortCreated:
-            std::sort(list.begin(), list.end(), [](const Snippet& a, const Snippet& b) {
-                return a.createdAt > b.createdAt;   // newest first
-            });
-            break;
-        case SortSize:
-            std::sort(list.begin(), list.end(), [](const Snippet& a, const Snippet& b) {
-                return a.content.length() > b.content.length();   // largest first
-            });
-            break;
-    }
+            case SortCreated:
+                return a.createdAt < b.createdAt;
+            case SortModified:
+                return a.updatedAt < b.updatedAt;
+            case SortSize:
+                return a.content.length() < b.content.length();
+        }
+        return false;
+    };
+
+    std::sort(list.begin(), list.end(), [&](const Snippet& a, const Snippet& b) {
+        return m_ascending ? cmp(a, b) : cmp(b, a);
+    });
     return list;
 }
 
@@ -242,7 +256,6 @@ void SnippetList::populateList(const QList<Snippet>& snippets)
         QSignalBlocker sb(m_list);
         m_list->setCurrentItem(toSelect);
     }
-
     m_list->verticalScrollBar()->setValue(scrollY);
 }
 
@@ -263,7 +276,14 @@ void SnippetList::filterList(const QString& query)
     populateList(filtered);
 }
 
-void SnippetList::onCurrentRowChanged(int /*row*/)
+void SnippetList::updateDirectionButton()
+{
+    m_dirBtn->setText(m_ascending
+        ? QStringLiteral("\u2191 Asc")
+        : QStringLiteral("\u2193 Desc"));
+}
+
+void SnippetList::onCurrentRowChanged(int)
 {
     auto* item = m_list->currentItem();
     if (item) emit snippetSelected(item->data(RoleSnippetId).toInt());
@@ -274,9 +294,16 @@ void SnippetList::onSearchChanged(const QString& text)
     filterList(text);
 }
 
-void SnippetList::onSortChanged(int /*index*/)
+void SnippetList::onSortChanged(int)
 {
     m_sortMode = static_cast<SortMode>(m_sortCombo->currentData().toInt());
+    filterList(m_search->text());
+}
+
+void SnippetList::onToggleDirection()
+{
+    m_ascending = !m_ascending;
+    updateDirectionButton();
     filterList(m_search->text());
 }
 

@@ -1,9 +1,11 @@
 #pragma once
 #include <QWidget>
-#include <QTreeWidget>
+#include <QScrollArea>
 #include <QVBoxLayout>
+#include <QToolButton>
 #include <QLabel>
 #include <QSettings>
+#include <QMap>
 #include "database.h"
 
 struct SidebarSelection {
@@ -13,9 +15,73 @@ struct SidebarSelection {
     QString tag;
 };
 
+// ── A single clickable row item ──────────────────────────────────────────────
+class SidebarItem : public QWidget {
+    Q_OBJECT
+public:
+    SidebarItem(const QString& label,
+                const QString& itemType,
+                QWidget* parent = nullptr);
+
+    void setSelected(bool on);
+    bool isSelected() const { return m_selected; }
+
+    QString itemType() const { return m_type; }
+
+    // extra data (folder id or tag name)
+    void   setPayload(const QVariant& v) { m_payload = v; }
+    QVariant payload() const             { return m_payload; }
+
+signals:
+    void clicked(SidebarItem* self);
+    void contextMenuRequested(SidebarItem* self, const QPoint& globalPos);
+
+protected:
+    void mousePressEvent(QMouseEvent* e) override;
+    void mouseReleaseEvent(QMouseEvent* e) override;
+    void contextMenuEvent(QContextMenuEvent* e) override;
+    void enterEvent(QEnterEvent* e) override;
+    void leaveEvent(QEvent* e) override;
+    void paintEvent(QPaintEvent* e) override;
+
+private:
+    QString  m_type;
+    QVariant m_payload;
+    bool     m_selected = false;
+    bool     m_hovered  = false;
+};
+
+// ── Collapsible section ───────────────────────────────────────────────────────
+class SidebarSection : public QWidget {
+    Q_OBJECT
+public:
+    SidebarSection(const QString& title,
+                   const QString& key,
+                   QSettings*     settings,
+                   QWidget*       parent = nullptr);
+
+    void addItem(SidebarItem* item);
+    void clearItems();
+    QList<SidebarItem*> items() const { return m_items; }
+    bool isExpanded() const;
+
+private slots:
+    void toggle();
+
+private:
+    void updateChevron();
+
+    QString           m_key;
+    QSettings*        m_settings;
+    QToolButton*      m_header;
+    QWidget*          m_body;
+    QVBoxLayout*      m_bodyLayout;
+    QList<SidebarItem*> m_items;
+};
+
+// ── Full sidebar ─────────────────────────────────────────────────────────────
 class Sidebar : public QWidget {
     Q_OBJECT
-
 public:
     explicit Sidebar(Database* db, QWidget* parent = nullptr);
     void refresh();
@@ -26,27 +92,23 @@ signals:
     void renameFolderRequested(int folderId);
     void deleteFolderRequested(int folderId);
 
-private slots:
-    void onItemClicked(QTreeWidgetItem* item, int col);
-    void onItemExpanded(QTreeWidgetItem* item);
-    void onItemCollapsed(QTreeWidgetItem* item);
-    void onContextMenu(const QPoint& pos);
-
 private:
-    void buildTree();
-    void saveExpandState();
-    void restoreExpandState();
-    void updateSectionLabel(QTreeWidgetItem* section);
+    void build();
+    void selectItem(SidebarItem* item);
+    void onItemClicked(SidebarItem* item);
+    void onItemContextMenu(SidebarItem* item, const QPoint& globalPos);
 
-    Database*        m_db;
-    QTreeWidget*     m_tree;
+    Database*         m_db;
+    QSettings         m_settings;
+    QVBoxLayout*      m_layout;   // inner layout inside scroll area
+    SidebarItem*      m_selected = nullptr;
 
-    QTreeWidgetItem* m_libSection  = nullptr;
-    QTreeWidgetItem* m_foldSection = nullptr;
-    QTreeWidgetItem* m_tagSection  = nullptr;
-    QTreeWidgetItem* m_allItem     = nullptr;
-    QTreeWidgetItem* m_favItem     = nullptr;
-    QTreeWidgetItem* m_binItem     = nullptr;
+    SidebarSection*   m_libSection  = nullptr;
+    SidebarSection*   m_foldSection = nullptr;
+    SidebarSection*   m_tagSection  = nullptr;
 
-    QSettings        m_settings;
+    // Keep track for restore-selection after refresh
+    QString           m_selType;
+    int               m_selFolderId = -1;
+    QString           m_selTag;
 };

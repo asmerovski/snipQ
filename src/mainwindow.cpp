@@ -121,7 +121,7 @@ void MainWindow::setupMenuBar() {
     helpMenu->addAction(makeAction("About snipQ", {}, this, [this]{
         QMessageBox::about(this, "About snipQ",
             "<b>snipQ v1.0.0</b><br>"
-            "A cross-platform code snippet manager inspired by massCode.<br><br>"
+            "A cross-platform code snippet manager.<br><br>"
             "Built with Qt6 · SQLite · C++17");
     }, this));
 }
