@@ -20,13 +20,21 @@ SidebarItem::SidebarItem(const QString& label,
     setFixedHeight(26);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-    // Lay out an icon label + text label so text is accessible
     auto* lay = new QHBoxLayout(this);
     lay->setContentsMargins(20, 0, 8, 0);
     lay->setSpacing(0);
 
     auto* lbl = new QLabel(label, this);
-    lbl->setStyleSheet("background:transparent; color:inherit;");
+    
+    // 1. Remove the hardcoded color from the stylesheet
+    lbl->setStyleSheet("background:transparent;");
+    
+    // 2. Use the palette to set a theme-aware text color
+    QPalette pal = lbl->palette();
+    pal.setColor(QPalette::WindowText, lbl->palette().color(QPalette::WindowText)); 
+    // Note: By default, QLabel already uses WindowText, so removing the 
+    // stylesheet color entirely might actually fix it instantly!
+    
     lbl->setAttribute(Qt::WA_TransparentForMouseEvents, true);
     lbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     lay->addWidget(lbl);
