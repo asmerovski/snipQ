@@ -1,0 +1,81 @@
+name: Qt6 Build & Deploy
+
+on: [push, pull_request]
+
+jobs:
+  build-linux-appimage:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Qt6 & Build Essentials
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake qt6-base-dev qt6-base-dev-tools
+
+      - name: Configure and Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          DESTDIR=AppDir cmake --install build
+
+      - name: Download Linuxdeploy + Qt Plugin
+        run: |
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy*.AppImage
+
+      - name: Pack AppImage
+        run: |
+          # Create a basic desktop file and icon if your build system doesn't install them
+          mkdir -p AppDir/usr/share/applications
+          echo -e "[Desktop Entry]\nType=Application\nName=QtApp\nExec=myapp\nIcon=qtapp\nCategories=Utility;" > AppDir/usr/share/applications/qtapp.desktop
+          touch AppDir/usr/share/icons/qtapp.png
+          
+          # Run packaging tool
+          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QtApp-Linux-AppImage
+          path: "*.AppImage"
+
+  build-windows-bundle:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Qt6
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.7.0' # Adjust to match your preferred Qt6 minor version
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+
+      - name: Setup MSVC Environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure and Build
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --config Release
+
+      - name: Deploy Windows Dependencies (windeployqt)
+        shell: pwsh
+        run: |
+          mkdir deploy
+          # Copy raw executable (Adjust path based on your CMake target output configuration)
+          cp build/Release/*.exe deploy/
+          # Deploy dynamic dependencies
+          windeployqt --no-compiler-runtime deploy/
+
+      - name: Upload Windows Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: QtApp-Windows-Package
+          path: deploy/
+          
