@@ -39,6 +39,7 @@ private:
     void setupMenuBar();
     void setupStatusBar();
     void loadSettings();
+    void restoreWindowState();
     void saveSettings();
     QString defaultDbPath() const;
 

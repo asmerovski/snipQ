@@ -14,12 +14,12 @@ int main(int argc, char* argv[]) {
     app.setOrganizationName("snipQ");
     app.setApplicationVersion("1.0.0");
     app.setWindowIcon(QIcon(":/icons/app.png"));
-    // Use Fusion base style for cross-platform consistency
-    // app.setStyle(QStyleFactory::create("Fusion"));
 
-    // Apply our dark theme
-    // app.setStyleSheet(Theme::StyleSheet);
+    // Fusion base style for consistent cross-platform rendering
+    app.setStyle(QStyleFactory::create("Fusion"));
 
+    // Apply dark theme
+    app.setStyleSheet(Theme::StyleSheet);
 
     MainWindow win;
     win.show();

@@ -2,6 +2,7 @@
 #include <QWidget>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QToolButton>
 #include <QLabel>
 #include <QSettings>
@@ -24,12 +25,10 @@ public:
                 QWidget* parent = nullptr);
 
     void setSelected(bool on);
+    void setLabelColor(const QString& hexColor);
     bool isSelected() const { return m_selected; }
-
     QString itemType() const { return m_type; }
-
-    // extra data (folder id or tag name)
-    void   setPayload(const QVariant& v) { m_payload = v; }
+    void    setPayload(const QVariant& v) { m_payload = v; }
     QVariant payload() const             { return m_payload; }
 
 signals:
@@ -47,6 +46,7 @@ protected:
 private:
     QString  m_type;
     QVariant m_payload;
+    QLabel*  m_label    = nullptr;
     bool     m_selected = false;
     bool     m_hovered  = false;
 };
@@ -71,11 +71,11 @@ private slots:
 private:
     void updateChevron();
 
-    QString           m_key;
-    QSettings*        m_settings;
-    QToolButton*      m_header;
-    QWidget*          m_body;
-    QVBoxLayout*      m_bodyLayout;
+    QString             m_key;
+    QSettings*          m_settings;
+    QToolButton*        m_header;
+    QWidget*            m_body;
+    QVBoxLayout*        m_bodyLayout;
     QList<SidebarItem*> m_items;
 };
 
@@ -98,17 +98,16 @@ private:
     void onItemClicked(SidebarItem* item);
     void onItemContextMenu(SidebarItem* item, const QPoint& globalPos);
 
-    Database*         m_db;
-    QSettings         m_settings;
-    QVBoxLayout*      m_layout;   // inner layout inside scroll area
-    SidebarItem*      m_selected = nullptr;
+    Database*       m_db;
+    QSettings       m_settings;
+    QVBoxLayout*    m_layout   = nullptr;
+    SidebarItem*    m_selected = nullptr;
 
-    SidebarSection*   m_libSection  = nullptr;
-    SidebarSection*   m_foldSection = nullptr;
-    SidebarSection*   m_tagSection  = nullptr;
+    SidebarSection* m_libSection  = nullptr;
+    SidebarSection* m_foldSection = nullptr;
+    SidebarSection* m_tagSection  = nullptr;
 
-    // Keep track for restore-selection after refresh
-    QString           m_selType;
-    int               m_selFolderId = -1;
-    QString           m_selTag;
+    QString m_selType;
+    int     m_selFolderId = -1;
+    QString m_selTag;
 };

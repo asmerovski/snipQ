@@ -60,9 +60,18 @@ bool Database::createSchema() {
         )
     )");
 
-    // Migrate old schema: add content/language columns if upgrading from tab-based schema
-    q.exec("ALTER TABLE snippets ADD COLUMN content TEXT DEFAULT ''");
-    q.exec("ALTER TABLE snippets ADD COLUMN language TEXT DEFAULT 'plaintext'");
+    // Schema version guard — run migrations only when needed
+    // Using PRAGMA user_version to track schema version
+    int schemaVersion = 0;
+    if (q.exec("PRAGMA user_version") && q.next())
+        schemaVersion = q.value(0).toInt();
+
+    if (schemaVersion < 1) {
+        // v0→v1: add content + language columns (migration from tab-based schema)
+        q.exec("ALTER TABLE snippets ADD COLUMN content TEXT DEFAULT ''");
+        q.exec("ALTER TABLE snippets ADD COLUMN language TEXT DEFAULT 'plaintext'");
+        q.exec("PRAGMA user_version = 1");
+    }
 
     if (!ok) qWarning() << "Schema error:" << q.lastError().text();
     return ok;

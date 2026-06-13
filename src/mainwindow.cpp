@@ -51,6 +51,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     setupMenuBar();
     setupStatusBar();
+    restoreWindowState();  // safe here — m_splitter and all widgets exist
 
     // ── Wire signals ─────────────────────────────────────────
     connect(m_sidebar, &Sidebar::selectionChanged,
@@ -131,12 +132,22 @@ void MainWindow::setupStatusBar() {
 }
 
 void MainWindow::loadSettings() {
+    // Phase 1: open DB only — called early in constructor before widgets exist.
+    // Never touch m_splitter or any widget here.
     QString dbPath = m_settings.value("storage/path", defaultDbPath()).toString();
     QDir().mkpath(QFileInfo(dbPath).absolutePath());
     if (!m_db->open(dbPath)) {
         QMessageBox::critical(this, "Database Error",
                               "Could not open or create the database at:\n" + dbPath);
     }
+}
+
+void MainWindow::restoreWindowState() {
+    // Phase 2: geometry + splitter restore — called after all widgets are built.
+    if (m_settings.contains("window/geometry"))
+        restoreGeometry(m_settings.value("window/geometry").toByteArray());
+    if (m_settings.contains("splitter/state"))
+        m_splitter->restoreState(m_settings.value("splitter/state").toByteArray());
 }
 
 void MainWindow::saveSettings() {

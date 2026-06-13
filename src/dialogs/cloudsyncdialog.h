@@ -5,8 +5,10 @@
 #include <QLabel>
 #include <QProgressBar>
 #include <QStackedWidget>
-#include "syncmanager.h"
-#include "database.h"
+#include <QPushButton>
+#include <QMap>
+#include "../sync/syncmanager.h"
+#include "../database.h"
 
 class CloudSyncDialog : public QDialog {
     Q_OBJECT
@@ -21,7 +23,7 @@ private slots:
     void onSyncFinished(bool ok, const QString& err);
 
 private:
-    QWidget* buildOAuthPage(CloudProvider p);
+    QWidget* buildOAuthPage(int providerIndex, CloudProvider p);
     QWidget* buildFtpPage();
     QWidget* buildSmbPage();
 
@@ -34,8 +36,9 @@ private:
     QLabel*         m_statusLabel;
     QPushButton*    m_syncBtn;
 
-    // OAuth fields (shared)
-    QLineEdit* m_oauthToken;
+    // One token field per OAuth provider (indexed 0-3)
+    QMap<int, QLineEdit*> m_oauthTokens;
+
     // FTP fields
     QLineEdit* m_ftpHost;
     QLineEdit* m_ftpPort;

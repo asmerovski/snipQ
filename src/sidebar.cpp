@@ -24,20 +24,18 @@ SidebarItem::SidebarItem(const QString& label,
     lay->setContentsMargins(20, 0, 8, 0);
     lay->setSpacing(0);
 
-    auto* lbl = new QLabel(label, this);
-    
-    // 1. Remove the hardcoded color from the stylesheet
-    lbl->setStyleSheet("background:transparent;");
-    
-    // 2. Use the palette to set a theme-aware text color
-    QPalette pal = lbl->palette();
-    pal.setColor(QPalette::WindowText, lbl->palette().color(QPalette::WindowText)); 
-    // Note: By default, QLabel already uses WindowText, so removing the 
-    // stylesheet color entirely might actually fix it instantly!
-    
-    lbl->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-    lbl->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    lay->addWidget(lbl);
+    m_label = new QLabel(label, this);
+    // Explicit color — does not depend on global QSS being applied
+    m_label->setStyleSheet("background:transparent; color:#c9d1d9;");
+    m_label->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    m_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    lay->addWidget(m_label);
+}
+
+void SidebarItem::setLabelColor(const QString& color)
+{
+    m_label->setStyleSheet(
+        QStringLiteral("background:transparent; color:%1;").arg(color));
 }
 
 void SidebarItem::setSelected(bool on)
@@ -48,16 +46,13 @@ void SidebarItem::setSelected(bool on)
 
 void SidebarItem::mousePressEvent(QMouseEvent* e)
 {
-    if (e->button() == Qt::LeftButton) {
-        // handled on release
-    }
+    if (e->button() == Qt::LeftButton) { /* handled on release */ }
     QWidget::mousePressEvent(e);
 }
 
 void SidebarItem::mouseReleaseEvent(QMouseEvent* e)
 {
-    if (e->button() == Qt::LeftButton &&
-        rect().contains(e->pos()))
+    if (e->button() == Qt::LeftButton && rect().contains(e->pos()))
         emit clicked(this);
     QWidget::mouseReleaseEvent(e);
 }
@@ -88,13 +83,10 @@ void SidebarItem::paintEvent(QPaintEvent*)
 
     if (m_selected) {
         p.fillRect(rect(), QColor("#1f3352"));
-        // left accent bar
-        p.fillRect(0, 0, 3, height(), QColor("#388bfd"));
+        p.fillRect(0, 0, 3, height(), QColor("#388bfd")); // left accent bar
     } else if (m_hovered) {
         p.fillRect(rect(), QColor("#21262d"));
     }
-
-    // Text is handled by child QLabel — nothing more needed
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -112,14 +104,13 @@ SidebarSection::SidebarSection(const QString& title,
     outerLay->setContentsMargins(0, 0, 0, 0);
     outerLay->setSpacing(0);
 
-    // ── Section header button ────────────────────────────────
     m_header = new QToolButton(this);
     m_header->setText(title);
     m_header->setCheckable(false);
     m_header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_header->setFixedHeight(22);
     m_header->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    m_header->setArrowType(Qt::DownArrow);   // updated by updateChevron()
+    m_header->setArrowType(Qt::DownArrow);
     m_header->setStyleSheet(R"(
         QToolButton {
             background: #1c2128;
@@ -137,7 +128,6 @@ SidebarSection::SidebarSection(const QString& title,
     )");
     outerLay->addWidget(m_header);
 
-    // ── Collapsible body ─────────────────────────────────────
     m_body = new QWidget(this);
     m_body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_bodyLayout = new QVBoxLayout(m_body);
@@ -147,7 +137,6 @@ SidebarSection::SidebarSection(const QString& title,
 
     connect(m_header, &QToolButton::clicked, this, &SidebarSection::toggle);
 
-    // Restore collapse state
     bool expanded = m_settings->value(
         QStringLiteral("sidebar/expanded/") + key, true).toBool();
     m_body->setVisible(expanded);
@@ -169,26 +158,20 @@ void SidebarSection::clearItems()
     m_items.clear();
 }
 
-bool SidebarSection::isExpanded() const
-{
-    return m_body->isVisible();
-}
+bool SidebarSection::isExpanded() const { return m_body->isVisible(); }
 
 void SidebarSection::toggle()
 {
     bool nowVisible = !m_body->isVisible();
     m_body->setVisible(nowVisible);
-    m_settings->setValue(
-        QStringLiteral("sidebar/expanded/") + m_key, nowVisible);
+    m_settings->setValue(QStringLiteral("sidebar/expanded/") + m_key, nowVisible);
     updateChevron();
-    // Notify parent to recalculate size
     if (parentWidget()) parentWidget()->adjustSize();
 }
 
 void SidebarSection::updateChevron()
 {
-    m_header->setArrowType(
-        m_body->isVisible() ? Qt::DownArrow : Qt::RightArrow);
+    m_header->setArrowType(m_body->isVisible() ? Qt::DownArrow : Qt::RightArrow);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -196,8 +179,7 @@ void SidebarSection::updateChevron()
 // ═══════════════════════════════════════════════════════════════════════════
 
 Sidebar::Sidebar(Database* db, QWidget* parent)
-    : QWidget(parent), m_db(db),
-      m_settings("snipQ", "snipQ")
+    : QWidget(parent), m_db(db), m_settings("snipQ", "snipQ")
 {
     setObjectName("Sidebar");
 
@@ -205,7 +187,6 @@ Sidebar::Sidebar(Database* db, QWidget* parent)
     outerLay->setContentsMargins(0, 0, 0, 0);
     outerLay->setSpacing(0);
 
-    // App title
     auto* titleLabel = new QLabel("  \u2b21  snipQ", this);
     titleLabel->setStyleSheet(
         "font-size:14px; font-weight:700; color:#58a6ff;"
@@ -213,12 +194,11 @@ Sidebar::Sidebar(Database* db, QWidget* parent)
         "background:#161b22; border-bottom:1px solid #21262d;");
     outerLay->addWidget(titleLabel);
 
-    // Scroll area wrapping all sections
     auto* scroll = new QScrollArea(this);
     scroll->setWidgetResizable(true);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setStyleSheet("QScrollArea { background: transparent; border: none; }");
+    scroll->setStyleSheet("QScrollArea { background:transparent; border:none; }");
 
     auto* container = new QWidget(scroll);
     container->setObjectName("SidebarContainer");
@@ -226,19 +206,20 @@ Sidebar::Sidebar(Database* db, QWidget* parent)
     m_layout = new QVBoxLayout(container);
     m_layout->setContentsMargins(0, 0, 0, 0);
     m_layout->setSpacing(0);
-    m_layout->addStretch(1);   // pushes sections to top
+    m_layout->addStretch(1);
 
     scroll->setWidget(container);
     outerLay->addWidget(scroll, 1);
 
     build();
+    // No emit here — MainWindow calls onSidebarSelection(defSel) explicitly
+    // after all signals are connected, so the initial load is handled there.
 }
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 
 void Sidebar::refresh()
 {
-    // Save current selection identity before rebuild
     if (m_selected) {
         m_selType     = m_selected->itemType();
         m_selFolderId = m_selected->payload().toInt();
@@ -247,7 +228,6 @@ void Sidebar::refresh()
 
     build();
 
-    // Restore selection
     auto trySelect = [&](SidebarSection* sec) {
         if (!sec) return;
         for (auto* item : sec->items()) {
@@ -255,9 +235,9 @@ void Sidebar::refresh()
             bool match = false;
             if (t == m_selType && t != "folder" && t != "tag") match = true;
             if (t == "folder" && m_selType == "folder" &&
-                item->payload().toInt() == m_selFolderId)   match = true;
-            if (t == "tag"    && m_selType == "tag"    &&
-                item->payload().toString() == m_selTag)     match = true;
+                item->payload().toInt() == m_selFolderId)          match = true;
+            if (t == "tag" && m_selType == "tag" &&
+                item->payload().toString() == m_selTag)            match = true;
             if (match) { selectItem(item); return; }
         }
     };
@@ -270,15 +250,13 @@ void Sidebar::refresh()
 
 static SidebarItem* makeItem(const QString& icon,
                              const QString& label,
-                             const QString& type,
-                             QWidget* parent = nullptr)
+                             const QString& type)
 {
-    return new SidebarItem(icon + "  " + label, type, parent);
+    return new SidebarItem(icon + "  " + label, type, nullptr);
 }
 
 void Sidebar::build()
 {
-    // Remove existing sections from layout (but not the stretch)
     auto removeSection = [&](SidebarSection*& sec) {
         if (sec) {
             m_layout->removeWidget(sec);
@@ -291,15 +269,13 @@ void Sidebar::build()
     removeSection(m_tagSection);
     m_selected = nullptr;
 
-    // Insert sections before the stretch (index = count-1)
-    int insertPos = m_layout->count() - 1;
+    int insertPos = m_layout->count() - 1; // before stretch
 
     // ── LIBRARY ──────────────────────────────────────────────
     m_libSection = new SidebarSection("LIBRARY", "lib", &m_settings, this);
 
     auto* favItem = makeItem("\u2605", "Favourites", "lib_fav");
-    favItem->findChild<QLabel*>()->setStyleSheet(
-        "background:transparent; color:#e3b341;");
+    favItem->setLabelColor("#e3b341");
     connect(favItem, &SidebarItem::clicked,
             this, [this](SidebarItem* i){ onItemClicked(i); });
     m_libSection->addItem(favItem);
@@ -310,8 +286,7 @@ void Sidebar::build()
     m_libSection->addItem(allItem);
 
     auto* binItem = makeItem("\u2297", "Bin", "bin");
-    binItem->findChild<QLabel*>()->setStyleSheet(
-        "background:transparent; color:#6e7681;");
+    binItem->setLabelColor("#6e7681");
     connect(binItem, &SidebarItem::clicked,
             this, [this](SidebarItem* i){ onItemClicked(i); });
     m_libSection->addItem(binItem);
@@ -331,7 +306,6 @@ void Sidebar::build()
                     onItemContextMenu(i, p); });
         m_foldSection->addItem(item);
     }
-
     m_layout->insertWidget(insertPos++, m_foldSection);
 
     // ── TAGS ──────────────────────────────────────────────────
@@ -340,19 +314,17 @@ void Sidebar::build()
     for (const QString& tag : m_db->allTags()) {
         auto* item = makeItem("#", tag, "tag");
         item->setPayload(tag);
-        item->findChild<QLabel*>()->setStyleSheet(
-            "background:transparent; color:#58a6ff;");
+        item->setLabelColor("#58a6ff");
         connect(item, &SidebarItem::clicked,
                 this, [this](SidebarItem* i){ onItemClicked(i); });
         m_tagSection->addItem(item);
     }
-
     m_layout->insertWidget(insertPos++, m_tagSection);
 
-    // Default selection: All Snippets
-    if (!m_selType.isEmpty()) return;  // will be restored by caller
-    selectItem(allItem);
-    emit selectionChanged(SidebarSelection{SidebarSelection::AllSnippets});
+    // If no prior selection exists, highlight All Snippets visually only
+    // (MainWindow drives the actual load via onSidebarSelection)
+    if (m_selType.isEmpty())
+        selectItem(allItem);
 }
 
 void Sidebar::selectItem(SidebarItem* item)

@@ -1,8 +1,8 @@
 <RCC>
-    <qresource prefix="/"/>
     <qresource prefix="/icons">
+        <file>app.png</file>
+        <file>app.svg</file>
         <file>chevron-down.svg</file>
         <file>chevron-right.svg</file>
-        <file>app.png</file>
     </qresource>
 </RCC>

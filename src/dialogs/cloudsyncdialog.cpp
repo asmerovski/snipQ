@@ -21,15 +21,15 @@ static const QList<QPair<QString, CloudProvider>> PROVIDERS = {
 };
 
 CloudSyncDialog::CloudSyncDialog(Database* db, SyncManager* sync, QWidget* parent)
-    : QDialog(parent), m_db(db), m_sync(sync) {
+    : QDialog(parent), m_db(db), m_sync(sync)
+{
     setWindowTitle("Cloud Sync");
-    setMinimumSize(480, 400);
+    setMinimumSize(500, 420);
 
     auto* lay = new QVBoxLayout(this);
     lay->setSpacing(12);
     lay->setContentsMargins(20, 20, 20, 20);
 
-    // Provider selector
     auto* provRow = new QHBoxLayout;
     provRow->addWidget(new QLabel("Provider:", this));
     m_providerCombo = new QComboBox(this);
@@ -37,17 +37,18 @@ CloudSyncDialog::CloudSyncDialog(Database* db, SyncManager* sync, QWidget* paren
     provRow->addWidget(m_providerCombo, 1);
     lay->addLayout(provRow);
 
-    // Stacked config pages
     m_stack = new QStackedWidget(this);
 
-    // OAuth pages (Google, OneDrive, Dropbox, Box)
-    for (int i = 0; i < 4; ++i) m_stack->addWidget(buildOAuthPage(PROVIDERS[i].second));
+    // One page per OAuth provider — each has its OWN token QLineEdit
+    for (int i = 0; i < 4; ++i)
+        m_stack->addWidget(buildOAuthPage(i, PROVIDERS[i].second));
 
     // MEGA placeholder
     auto* megaPage = new QWidget(this);
     auto* megaLay  = new QVBoxLayout(megaPage);
-    auto* megaLbl  = new QLabel("MEGA sync: export your DB to JSON and manually upload\n"
-                                "via the MEGA web or desktop client.", megaPage);
+    auto* megaLbl  = new QLabel(
+        "MEGA sync: export your DB to JSON and manually\n"
+        "upload via the MEGA web or desktop client.", megaPage);
     megaLbl->setWordWrap(true);
     megaLay->addWidget(megaLbl);
     megaLay->addStretch();
@@ -58,21 +59,17 @@ CloudSyncDialog::CloudSyncDialog(Database* db, SyncManager* sync, QWidget* paren
 
     lay->addWidget(m_stack);
 
-    // Status / progress
     m_statusLabel = new QLabel("Ready.", this);
     m_statusLabel->setStyleSheet("color:#8b949e; font-size:11px;");
     lay->addWidget(m_statusLabel);
+
     m_progress = new QProgressBar(this);
     m_progress->setRange(0, 100);
     m_progress->setValue(0);
     m_progress->setTextVisible(false);
     m_progress->setFixedHeight(4);
-    m_progress->setStyleSheet(
-        "QProgressBar { background:#21262d; border-radius:2px; }"
-        "QProgressBar::chunk { background:#388bfd; border-radius:2px; }");
     lay->addWidget(m_progress);
 
-    // Buttons
     auto* btnRow = new QHBoxLayout;
     btnRow->addStretch();
     m_syncBtn = new QPushButton("Sync Now", this);
@@ -90,38 +87,43 @@ CloudSyncDialog::CloudSyncDialog(Database* db, SyncManager* sync, QWidget* paren
     connect(m_sync, &SyncManager::syncFinished,  this, &CloudSyncDialog::onSyncFinished);
 }
 
-QWidget* CloudSyncDialog::buildOAuthPage(CloudProvider /*p*/) {
+QWidget* CloudSyncDialog::buildOAuthPage(int providerIndex, CloudProvider /*p*/)
+{
     auto* page = new QWidget(this);
     auto* lay  = new QVBoxLayout(page);
 
     auto* info = new QLabel(
-        "1. Click 'Authenticate' to open the provider's login page in your browser.\n"
-        "2. After authorizing, paste the access token below.\n"
-        "3. Click 'Sync Now' to upload/download your database.", page);
+        "1. Click 'Authenticate' to open the provider login page.\n"
+        "2. After authorising, paste the access token below.\n"
+        "3. Click 'Sync Now'.", page);
     info->setWordWrap(true);
     lay->addWidget(info);
 
     auto* form = new QFormLayout;
-    m_oauthToken = new QLineEdit(page);
-    m_oauthToken->setPlaceholderText("Paste access token here…");
-    form->addRow("Access Token:", m_oauthToken);
+    auto* tokenEdit = new QLineEdit(page);
+    tokenEdit->setPlaceholderText("Paste access token here\u2026");
+    form->addRow("Access Token:", tokenEdit);
     lay->addLayout(form);
 
-    auto* authBtn = new QPushButton("Authenticate →", page);
+    // Store per-provider so reading back works correctly
+    m_oauthTokens[providerIndex] = tokenEdit;
+
+    auto* authBtn = new QPushButton("Authenticate \u2192", page);
     connect(authBtn, &QPushButton::clicked, this, &CloudSyncDialog::onAuthenticate);
     lay->addWidget(authBtn);
     lay->addStretch();
     return page;
 }
 
-QWidget* CloudSyncDialog::buildFtpPage() {
+QWidget* CloudSyncDialog::buildFtpPage()
+{
     auto* page = new QWidget(this);
     auto* form = new QFormLayout(page);
     m_ftpHost = new QLineEdit(page); m_ftpHost->setPlaceholderText("ftp.example.com");
     m_ftpPort = new QLineEdit(page); m_ftpPort->setPlaceholderText("21");
     m_ftpUser = new QLineEdit(page);
     m_ftpPass = new QLineEdit(page); m_ftpPass->setEchoMode(QLineEdit::Password);
-    m_ftpPath = new QLineEdit(page); m_ftpPath->setPlaceholderText("/backups/snipQ_db.json");
+    m_ftpPath = new QLineEdit(page); m_ftpPath->setPlaceholderText("/backups/snipq_db.json");
     form->addRow("Host:",        m_ftpHost);
     form->addRow("Port:",        m_ftpPort);
     form->addRow("Username:",    m_ftpUser);
@@ -130,7 +132,8 @@ QWidget* CloudSyncDialog::buildFtpPage() {
     return page;
 }
 
-QWidget* CloudSyncDialog::buildSmbPage() {
+QWidget* CloudSyncDialog::buildSmbPage()
+{
     auto* page = new QWidget(this);
     auto* form = new QFormLayout(page);
     m_smbHost = new QLineEdit(page); m_smbHost->setPlaceholderText("192.168.1.10");
@@ -144,16 +147,20 @@ QWidget* CloudSyncDialog::buildSmbPage() {
     return page;
 }
 
-void CloudSyncDialog::onProviderChanged(int idx) {
+void CloudSyncDialog::onProviderChanged(int idx)
+{
     m_stack->setCurrentIndex(idx);
 }
 
-void CloudSyncDialog::onAuthenticate() {
+void CloudSyncDialog::onAuthenticate()
+{
     int idx = m_providerCombo->currentIndex();
     QUrl url;
     switch (idx) {
-        case 0: url = "https://accounts.google.com/o/oauth2/auth?scope=https://www.googleapis.com/auth/drive.file"; break;
-        case 1: url = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?scope=Files.ReadWrite"; break;
+        case 0: url = "https://accounts.google.com/o/oauth2/auth"
+                      "?scope=https://www.googleapis.com/auth/drive.file"; break;
+        case 1: url = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize"
+                      "?scope=Files.ReadWrite"; break;
         case 2: url = "https://www.dropbox.com/oauth2/authorize"; break;
         case 3: url = "https://account.box.com/api/oauth2/authorize"; break;
         default: return;
@@ -161,7 +168,8 @@ void CloudSyncDialog::onAuthenticate() {
     QDesktopServices::openUrl(url);
 }
 
-void CloudSyncDialog::onSyncNow() {
+void CloudSyncDialog::onSyncNow()
+{
     int idx = m_providerCombo->currentIndex();
     auto [name, provider] = PROVIDERS[idx];
 
@@ -170,7 +178,9 @@ void CloudSyncDialog::onSyncNow() {
     cfg.localDbPath = m_db->currentPath();
 
     if (idx < 4) {
-        cfg.accessToken = m_oauthToken ? m_oauthToken->text().trimmed() : QString();
+        // Read the token from the correct per-provider field
+        auto* tokenEdit = m_oauthTokens.value(idx, nullptr);
+        cfg.accessToken = tokenEdit ? tokenEdit->text().trimmed() : QString();
     } else if (provider == CloudProvider::FTP) {
         cfg.host       = m_ftpHost->text().trimmed();
         cfg.port       = m_ftpPort->text().toInt();
@@ -187,17 +197,21 @@ void CloudSyncDialog::onSyncNow() {
     m_sync->configure(cfg);
     m_syncBtn->setEnabled(false);
     m_progress->setValue(0);
-    m_statusLabel->setText("Starting sync…");
+    m_statusLabel->setText("Starting sync\u2026");
     m_sync->syncNow();
 }
 
-void CloudSyncDialog::onSyncProgress(int pct, const QString& msg) {
+void CloudSyncDialog::onSyncProgress(int pct, const QString& msg)
+{
     m_progress->setValue(pct);
     m_statusLabel->setText(msg);
 }
 
-void CloudSyncDialog::onSyncFinished(bool ok, const QString& err) {
+void CloudSyncDialog::onSyncFinished(bool ok, const QString& err)
+{
     m_syncBtn->setEnabled(true);
     m_progress->setValue(ok ? 100 : 0);
-    m_statusLabel->setText(ok ? "✓ Sync complete." : QStringLiteral("✗ %1").arg(err));
+    m_statusLabel->setText(ok
+        ? "\u2713 Sync complete."
+        : QStringLiteral("\u2717 %1").arg(err));
 }

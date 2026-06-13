@@ -270,6 +270,7 @@ void SnippetList::filterList(const QString& query)
     for (const Snippet& s : m_snippets) {
         if (s.name.toLower().contains(q)        ||
             s.description.toLower().contains(q) ||
+            s.content.toLower().contains(q)     ||
             s.tags.join(' ').toLower().contains(q))
             filtered << s;
     }
