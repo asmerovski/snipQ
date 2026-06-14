@@ -103,41 +103,49 @@ void Highlighter::setLanguage(const QString& lang)
 
 void Highlighter::highlightBlock(const QString& text)
 {
-    // ── Multi-line comments (stateful) ────────────────────────
-    for (int ci = 0; ci < m_mlComments.size(); ++ci) {
-        const auto& mlc = m_mlComments[ci];
-        int startState = mlc.stateId;
-        int prevState  = previousBlockState();
+    setCurrentBlockState(-1);
+
+    // ── Multi-line spans (comments, triple-quoted strings) ────
+    // Each mlc has a unique stateId. We check if the previous block
+    // ended inside any of them, or if one starts on this line.
+    for (const auto& mlc : m_mlComments) {
+        int prevState = previousBlockState();
         int startIndex = 0;
 
-        if (prevState != startState) {
+        if (prevState == mlc.stateId) {
+            // We are continuing inside this span from the previous block
+            startIndex = 0;
+        } else {
+            // Look for the opening delimiter on this line
             startIndex = text.indexOf(mlc.start);
-            if (startIndex < 0) {
-                // Not inside a comment, single-line rules apply
-                goto singleLine;
-            }
+            if (startIndex < 0)
+                continue; // this mlc doesn't apply to this line, try next
         }
 
-        // We are inside (or just entered) a multi-line comment
         while (startIndex >= 0) {
-            auto endMatch = mlc.end.match(text, startIndex + (prevState == startState ? 0 : mlc.start.pattern().length()));
+            // Search for closing delimiter after the opening
+            int searchFrom = (prevState == mlc.stateId)
+                             ? startIndex
+                             : startIndex + mlc.start.pattern().length();
+            auto endMatch = mlc.end.match(text, searchFrom);
             int  endIndex = endMatch.capturedStart();
             int  len;
             if (endIndex < 0) {
-                setCurrentBlockState(startState);
+                // Span continues into next block
+                setCurrentBlockState(mlc.stateId);
                 len = text.length() - startIndex;
+                setFormat(startIndex, len, mlc.format);
+                return; // rest of line is inside this span
             } else {
                 len = endIndex - startIndex + endMatch.capturedLength();
+                setFormat(startIndex, len, mlc.format);
             }
-            setFormat(startIndex, len, mlc.format);
-            startIndex = (endIndex < 0) ? -1 : text.indexOf(mlc.start, startIndex + len);
-            prevState  = -1;
+            prevState  = -1; // no longer in a "previous" continuation
+            startIndex = text.indexOf(mlc.start, startIndex + len);
         }
-        return;
+        // If we formatted anything from this mlc, we can still fall through
+        // to single-line rules for the unformatted portions.
     }
-
-singleLine:
-    setCurrentBlockState(-1);
 
     // ── Single-line rules ─────────────────────────────────────
     for (const Rule& rule : m_rules) {
@@ -187,18 +195,6 @@ static void setupCBase(Highlighter* h)
 
     // Preprocessor
     h->addHlRule(R"(^\s*#\s*\w+)", pp);
-    // Single-line comments
-    h->addHlRule(R"(//[^\n]*)", cm);
-    // Multi-line /* */ comment
-    Highlighter::MultiLineComment mlc;
-    mlc.start   = QRegularExpression(R"(/\*)");
-    mlc.end     = QRegularExpression(R"(\*/)");
-    mlc.format  = cm;
-    mlc.stateId = 1;
-    // We add it via the struct directly after this function returns — 
-    // but we can also inline it; for simplicity add it as a rule trick.
-    // Actually expose via a helper on Highlighter:
-    // (We'll do it in the specific setup* functions that call this)
 
     h->addHlKeywords({
         "auto","break","case","continue","default","do","else","enum",

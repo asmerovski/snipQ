@@ -7,8 +7,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# Only the modules snipQ actually uses — no WebEngine
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql Network)
-find_package(Qt6 OPTIONAL_COMPONENTS WebEngineWidgets)
 
 set(SOURCES
     src/main.cpp
@@ -18,6 +18,7 @@ set(SOURCES
     src/snippeteditor.cpp
     src/highlighter.cpp
     src/codeformatter.cpp
+    src/codeeditor.cpp
     src/snippetlist.cpp
     src/database.cpp
     src/models/snippet.cpp
@@ -35,7 +36,6 @@ set(SOURCES
 
 qt_add_executable(snipQ ${SOURCES})
 
-# So that #include "database.h", #include "models/snippet.h" etc all work
 target_include_directories(snipQ PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/models
@@ -47,11 +47,6 @@ target_link_libraries(snipQ PRIVATE
     Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql Qt6::Network
 )
 
-if(Qt6WebEngineWidgets_FOUND)
-    target_link_libraries(snipQ PRIVATE Qt6::WebEngineWidgets)
-    target_compile_definitions(snipQ PRIVATE HAVE_WEBENGINE)
-endif()
-
 if(WIN32)
     set_target_properties(snipQ PROPERTIES WIN32_EXECUTABLE TRUE)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/resources/app.rc")
@@ -60,7 +55,7 @@ if(WIN32)
 elseif(APPLE)
     set_target_properties(snipQ PROPERTIES
         MACOSX_BUNDLE TRUE
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.snipQ.app"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "io.snipq.app"
         MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
         MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     )

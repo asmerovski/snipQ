@@ -1,6 +1,5 @@
 #pragma once
 #include <QWidget>
-#include <QPlainTextEdit>
 #include <QLineEdit>
 #include <QComboBox>
 #include <QLabel>
@@ -9,6 +8,7 @@
 #include <QToolButton>
 #include <QTimer>
 #include "database.h"
+#include "codeeditor.h"
 #include "highlighter.h"
 
 class SnippetEditor : public QWidget {
@@ -36,7 +36,7 @@ private:
     void buildTagsBar();
     void rebuildTagChips();
     void scheduleAutoSave();
-    void applyHighlighter(const QString& lang);
+    void applyLanguage(const QString& lang);
 
     Database*       m_db;
     Snippet         m_snippet;
@@ -44,7 +44,7 @@ private:
     bool            m_dirty   = false;
 
     QLineEdit*      m_titleEdit;
-    QPlainTextEdit* m_editor;
+    CodeEditor*     m_editor;       // ← CodeEditor with gutter + smart keys
     QComboBox*      m_langCombo;
     QWidget*        m_tagsBar;
     QHBoxLayout*    m_tagsLayout;

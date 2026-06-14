@@ -4,9 +4,7 @@
 #include <QTimer>
 #include <QApplication>
 #include <QClipboard>
-#include <QFontInfo>
 #include <QToolBar>
-#include <QScrollBar>
 #include <QTextBlock>
 
 static const QStringList LANGUAGES = {
@@ -61,37 +59,40 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
 
     toolbar->addSeparator();
 
+    // Keyboard shortcut hint label
+    auto* hintLabel = new QLabel(
+        "Ctrl+/: comment  \u2502  Tab: indent  \u2502  Shift+Tab: unindent", this);
+    hintLabel->setStyleSheet("color:#484f58; font-size:10px; padding:0 8px;");
+    toolbar->addWidget(hintLabel);
+
+    auto* spacer = new QWidget(this);
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    toolbar->addWidget(spacer);
+
     m_charCount = new QLabel("0 chars", this);
     m_charCount->setStyleSheet("color:#484f58; font-size:11px; padding:0 8px;");
     toolbar->addWidget(m_charCount);
 
     lay->addWidget(toolbar);
 
-    // ── Code editor ──────────────────────────────────────────
-    m_editor = new QPlainTextEdit(this);
-    m_editor->setLineWrapMode(QPlainTextEdit::NoWrap);
+    // ── Code editor (with line numbers + smart keys) ─────────
+    m_editor = new CodeEditor(this);
     m_editor->setPlaceholderText("// Start typing your snippet\u2026");
     m_editor->setFont(AppSettings::instance().editorFont());
+    m_editor->setTabWidth(4);
     m_editor->viewport()->setCursor(Qt::IBeamCursor);
 
-    // Tab = 4 spaces visually
-    QFontMetrics fm(m_editor->font());
-    m_editor->setTabStopDistance(fm.horizontalAdvance(' ') * 4);
-
-    lay->addWidget(m_editor, 1);
-
-    // Syntax highlighter — attached to the document, lives until re-assigned
+    // Syntax highlighter — owned by the document
     m_highlighter = new Highlighter(m_editor->document());
 
-    // Live font updates from Settings
+    // Live font updates from Settings dialog
+    // (CodeEditor already connects internally; this keeps charCount updated)
     connect(&AppSettings::instance(), &AppSettings::fontChanged,
-            this, [this](const QFont& f) {
-                m_editor->setFont(f);
-                QFontMetrics fm2(f);
-                m_editor->setTabStopDistance(fm2.horizontalAdvance(' ') * 4);
-                // Rehighlight after font change (char format metrics may shift)
+            this, [this](const QFont&) {
                 if (m_highlighter) m_highlighter->rehighlight();
             });
+
+    lay->addWidget(m_editor, 1);
 
     // ── Tags bar ─────────────────────────────────────────────
     buildTagsBar();
@@ -102,7 +103,7 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
     m_saveTimer->setSingleShot(true);
     m_saveTimer->setInterval(600);
 
-    // ── Connections ──────────────────────────────────────────
+    // ── Wire signals ──────────────────────────────────────────
     connect(m_saveTimer,  &QTimer::timeout,
             this,         &SnippetEditor::autoSave);
     connect(m_titleEdit,  &QLineEdit::textChanged,
@@ -142,6 +143,7 @@ void SnippetEditor::loadSnippet(int id)
 {
     m_saveTimer->stop();
 
+    // Flush previous snippet silently (block dataChanged to avoid re-entrant refresh)
     if (m_dirty && m_snippet.isValid()) {
         QSignalBlocker dbBlocker(m_db);
         autoSave();
@@ -159,6 +161,7 @@ void SnippetEditor::loadSnippet(int id)
     m_editor->setEnabled(true);
     m_langCombo->setEnabled(true);
 
+    // Block all widget signals while populating
     {
         QSignalBlocker tb(m_titleEdit);
         QSignalBlocker eb(m_editor);
@@ -167,6 +170,7 @@ void SnippetEditor::loadSnippet(int id)
         m_titleEdit->setText(m_snippet.name);
         m_editor->setPlainText(m_snippet.content);
 
+        // Move cursor to top without triggering scroll-jump
         QTextCursor tc = m_editor->textCursor();
         tc.movePosition(QTextCursor::Start);
         m_editor->setTextCursor(tc);
@@ -175,9 +179,7 @@ void SnippetEditor::loadSnippet(int id)
         m_langCombo->setCurrentIndex(idx >= 0 ? idx : 0);
     }
 
-    // Apply highlighter for this language
-    applyHighlighter(m_snippet.language);
-
+    applyLanguage(m_snippet.language);
     rebuildTagChips();
     m_charCount->setText(
         QStringLiteral("%1 chars").arg(m_snippet.content.length()));
@@ -188,15 +190,14 @@ void SnippetEditor::loadSnippet(int id)
 
 // ─── Private helpers ─────────────────────────────────────────────────────────
 
-void SnippetEditor::applyHighlighter(const QString& lang)
+void SnippetEditor::applyLanguage(const QString& lang)
 {
-    if (!m_highlighter) {
-        m_highlighter = new Highlighter(m_editor->document());
-    }
-    m_highlighter->setLanguage(lang);
+    m_editor->setLanguage(lang);           // sets comment prefix for Ctrl+/
+    if (m_highlighter)
+        m_highlighter->setLanguage(lang);  // recolours the document
 }
 
-// ─── Private slots ───────────────────────────────────────────────────────────
+// ─── Slots ───────────────────────────────────────────────────────────────────
 
 void SnippetEditor::onTitleChanged(const QString& text)
 {
@@ -217,7 +218,7 @@ void SnippetEditor::onLanguageChanged(const QString& lang)
 {
     if (m_loading || !m_snippet.isValid()) return;
     m_snippet.language = lang;
-    applyHighlighter(lang);
+    applyLanguage(lang);
     scheduleAutoSave();
 }
 
@@ -225,23 +226,22 @@ void SnippetEditor::onFormatCode()
 {
     if (!m_snippet.isValid() || !m_editor->isEnabled()) return;
 
-    QString original = m_editor->toPlainText();
+    QString original  = m_editor->toPlainText();
     if (original.trimmed().isEmpty()) return;
 
     QString formatted = CodeFormatter::format(original, m_snippet.language);
-    if (formatted == original) return;  // nothing changed
+    if (formatted == original) return;
 
-    // Preserve cursor line roughly
+    // Preserve approximate cursor position by line number
     int cursorLine = m_editor->textCursor().blockNumber();
 
-    // Replace content with undo support
     QTextCursor tc = m_editor->textCursor();
     tc.beginEditBlock();
     tc.select(QTextCursor::Document);
     tc.insertText(formatted);
     tc.endEditBlock();
 
-    // Restore cursor to same approximate line
+    // Restore cursor line
     QTextBlock blk = m_editor->document()->findBlockByNumber(
         qMin(cursorLine, m_editor->document()->blockCount() - 1));
     QTextCursor nc(blk);
@@ -298,6 +298,7 @@ void SnippetEditor::buildTagsBar()
 
 void SnippetEditor::rebuildTagChips()
 {
+    // Remove all chip widgets (keep m_tagInput + stretch)
     QList<QWidget*> chips;
     for (int i = 0; i < m_tagsLayout->count(); ++i) {
         auto* item = m_tagsLayout->itemAt(i);
@@ -305,19 +306,16 @@ void SnippetEditor::rebuildTagChips()
         auto* w = item->widget();
         if (w && w != m_tagInput) chips << w;
     }
-    for (auto* w : chips) {
-        m_tagsLayout->removeWidget(w);
-        delete w;
-    }
+    for (auto* w : chips) { m_tagsLayout->removeWidget(w); delete w; }
 
     for (const QString& tag : m_snippet.tags) {
         auto* chip = new QToolButton(m_tagsBar);
         chip->setText(QStringLiteral("# ") + tag + QStringLiteral("  \u00d7"));
         chip->setStyleSheet(
-            "QToolButton { background:#1f3352; color:#58a6ff;"
-            "border:1px solid #2d4a6e; border-radius:4px;"
-            "font-size:11px; padding:2px 6px; }"
-            "QToolButton:hover { background:#2d4a6e; }");
+            "QToolButton{background:#1f3352;color:#58a6ff;"
+            "border:1px solid #2d4a6e;border-radius:4px;"
+            "font-size:11px;padding:2px 6px;}"
+            "QToolButton:hover{background:#2d4a6e;}");
         QString tagCopy = tag;
         connect(chip, &QToolButton::clicked, this, [this, tagCopy]() {
             m_snippet.tags.removeAll(tagCopy);
