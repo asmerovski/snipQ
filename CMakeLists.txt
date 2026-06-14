@@ -16,6 +16,8 @@ set(SOURCES
     src/appsettings.h
     src/sidebar.cpp
     src/snippeteditor.cpp
+    src/highlighter.cpp
+    src/codeformatter.cpp
     src/snippetlist.cpp
     src/database.cpp
     src/models/snippet.cpp

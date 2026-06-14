@@ -9,6 +9,7 @@
 #include <QToolButton>
 #include <QTimer>
 #include "database.h"
+#include "highlighter.h"
 
 class SnippetEditor : public QWidget {
     Q_OBJECT
@@ -28,12 +29,14 @@ private slots:
     void onLanguageChanged(const QString& lang);
     void onAddTag();
     void onCopyContent();
+    void onFormatCode();
     void autoSave();
 
 private:
     void buildTagsBar();
     void rebuildTagChips();
     void scheduleAutoSave();
+    void applyHighlighter(const QString& lang);
 
     Database*       m_db;
     Snippet         m_snippet;
@@ -48,4 +51,5 @@ private:
     QLineEdit*      m_tagInput;
     QLabel*         m_charCount;
     QTimer*         m_saveTimer;
+    Highlighter*    m_highlighter = nullptr;
 };

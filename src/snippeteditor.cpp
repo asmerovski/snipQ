@@ -1,11 +1,13 @@
 #include "snippeteditor.h"
 #include "appsettings.h"
+#include "codeformatter.h"
 #include <QTimer>
 #include <QApplication>
 #include <QClipboard>
 #include <QFontInfo>
 #include <QToolBar>
 #include <QScrollBar>
+#include <QTextBlock>
 
 static const QStringList LANGUAGES = {
     "plaintext","bash","c","cpp","csharp","css","dart","diff","dockerfile",
@@ -28,7 +30,7 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
     // ── Title ────────────────────────────────────────────────
     m_titleEdit = new QLineEdit(this);
     m_titleEdit->setObjectName("SnippetTitle");
-    m_titleEdit->setPlaceholderText("Snippet name…");
+    m_titleEdit->setPlaceholderText("Snippet name\u2026");
     lay->addWidget(m_titleEdit);
 
     // ── Toolbar ──────────────────────────────────────────────
@@ -43,9 +45,18 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
 
     toolbar->addSeparator();
 
+    auto* fmtBtn = new QToolButton(this);
+    fmtBtn->setText("\u2261  Format");
+    fmtBtn->setToolTip("Format / align code  (Ctrl+Shift+F)");
+    fmtBtn->setShortcut(QKeySequence("Ctrl+Shift+F"));
+    toolbar->addWidget(fmtBtn);
+
+    toolbar->addSeparator();
+
     auto* copyBtn = new QToolButton(this);
     copyBtn->setText("\u29c9  Copy");
-    copyBtn->setToolTip("Copy content to clipboard");
+    copyBtn->setToolTip("Copy content to clipboard  (Ctrl+Shift+C)");
+    copyBtn->setShortcut(QKeySequence("Ctrl+Shift+C"));
     toolbar->addWidget(copyBtn);
 
     toolbar->addSeparator();
@@ -59,15 +70,27 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
     // ── Code editor ──────────────────────────────────────────
     m_editor = new QPlainTextEdit(this);
     m_editor->setLineWrapMode(QPlainTextEdit::NoWrap);
-    m_editor->setPlaceholderText("// Start typing your snippet…");
+    m_editor->setPlaceholderText("// Start typing your snippet\u2026");
     m_editor->setFont(AppSettings::instance().editorFont());
     m_editor->viewport()->setCursor(Qt::IBeamCursor);
+
+    // Tab = 4 spaces visually
+    QFontMetrics fm(m_editor->font());
+    m_editor->setTabStopDistance(fm.horizontalAdvance(' ') * 4);
+
     lay->addWidget(m_editor, 1);
 
-    // Live font updates from Settings dialog
+    // Syntax highlighter — attached to the document, lives until re-assigned
+    m_highlighter = new Highlighter(m_editor->document());
+
+    // Live font updates from Settings
     connect(&AppSettings::instance(), &AppSettings::fontChanged,
             this, [this](const QFont& f) {
                 m_editor->setFont(f);
+                QFontMetrics fm2(f);
+                m_editor->setTabStopDistance(fm2.horizontalAdvance(' ') * 4);
+                // Rehighlight after font change (char format metrics may shift)
+                if (m_highlighter) m_highlighter->rehighlight();
             });
 
     // ── Tags bar ─────────────────────────────────────────────
@@ -88,6 +111,8 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
             this,         &SnippetEditor::onContentChanged);
     connect(m_langCombo,  &QComboBox::currentTextChanged,
             this,         &SnippetEditor::onLanguageChanged);
+    connect(fmtBtn,       &QToolButton::clicked,
+            this,         &SnippetEditor::onFormatCode);
     connect(copyBtn,      &QToolButton::clicked,
             this,         &SnippetEditor::onCopyContent);
 
@@ -108,17 +133,15 @@ void SnippetEditor::clearEditor()
     m_tagInput->clear();
     rebuildTagChips();
     m_charCount->setText(QStringLiteral("\u2014"));
+    if (m_highlighter) m_highlighter->setLanguage("plaintext");
     m_dirty   = false;
     m_loading = false;
 }
 
 void SnippetEditor::loadSnippet(int id)
 {
-    // Stop timer first so it can't fire mid-load
     m_saveTimer->stop();
 
-    // Flush dirty state for the PREVIOUS snippet, blocking dataChanged so the
-    // list doesn't rebuild re-entrantly while we're inside onCurrentRowChanged
     if (m_dirty && m_snippet.isValid()) {
         QSignalBlocker dbBlocker(m_db);
         autoSave();
@@ -136,16 +159,14 @@ void SnippetEditor::loadSnippet(int id)
     m_editor->setEnabled(true);
     m_langCombo->setEnabled(true);
 
-    // Block widget signals while we populate to avoid spurious dirty-marks
     {
         QSignalBlocker tb(m_titleEdit);
         QSignalBlocker eb(m_editor);
         QSignalBlocker lb(m_langCombo);
 
         m_titleEdit->setText(m_snippet.name);
-
         m_editor->setPlainText(m_snippet.content);
-        // Restore cursor to top without triggering a scroll-to-cursor jump
+
         QTextCursor tc = m_editor->textCursor();
         tc.movePosition(QTextCursor::Start);
         m_editor->setTextCursor(tc);
@@ -154,12 +175,25 @@ void SnippetEditor::loadSnippet(int id)
         m_langCombo->setCurrentIndex(idx >= 0 ? idx : 0);
     }
 
+    // Apply highlighter for this language
+    applyHighlighter(m_snippet.language);
+
     rebuildTagChips();
     m_charCount->setText(
         QStringLiteral("%1 chars").arg(m_snippet.content.length()));
 
     m_dirty   = false;
     m_loading = false;
+}
+
+// ─── Private helpers ─────────────────────────────────────────────────────────
+
+void SnippetEditor::applyHighlighter(const QString& lang)
+{
+    if (!m_highlighter) {
+        m_highlighter = new Highlighter(m_editor->document());
+    }
+    m_highlighter->setLanguage(lang);
 }
 
 // ─── Private slots ───────────────────────────────────────────────────────────
@@ -183,7 +217,36 @@ void SnippetEditor::onLanguageChanged(const QString& lang)
 {
     if (m_loading || !m_snippet.isValid()) return;
     m_snippet.language = lang;
+    applyHighlighter(lang);
     scheduleAutoSave();
+}
+
+void SnippetEditor::onFormatCode()
+{
+    if (!m_snippet.isValid() || !m_editor->isEnabled()) return;
+
+    QString original = m_editor->toPlainText();
+    if (original.trimmed().isEmpty()) return;
+
+    QString formatted = CodeFormatter::format(original, m_snippet.language);
+    if (formatted == original) return;  // nothing changed
+
+    // Preserve cursor line roughly
+    int cursorLine = m_editor->textCursor().blockNumber();
+
+    // Replace content with undo support
+    QTextCursor tc = m_editor->textCursor();
+    tc.beginEditBlock();
+    tc.select(QTextCursor::Document);
+    tc.insertText(formatted);
+    tc.endEditBlock();
+
+    // Restore cursor to same approximate line
+    QTextBlock blk = m_editor->document()->findBlockByNumber(
+        qMin(cursorLine, m_editor->document()->blockCount() - 1));
+    QTextCursor nc(blk);
+    m_editor->setTextCursor(nc);
+    m_editor->ensureCursorVisible();
 }
 
 void SnippetEditor::onCopyContent()
@@ -212,8 +275,6 @@ void SnippetEditor::autoSave()
     emit snippetModified(m_snippet.id);
 }
 
-// ─── Private helpers ─────────────────────────────────────────────────────────
-
 void SnippetEditor::buildTagsBar()
 {
     m_tagsBar = new QWidget(this);
@@ -223,13 +284,13 @@ void SnippetEditor::buildTagsBar()
     m_tagsLayout->setSpacing(6);
 
     m_tagInput = new QLineEdit(m_tagsBar);
-    m_tagInput->setPlaceholderText("Add tag…");
+    m_tagInput->setPlaceholderText("Add tag\u2026");
     m_tagInput->setFixedWidth(110);
     m_tagInput->setStyleSheet(
         "background:#161b22; border:1px solid #30363d; border-radius:4px;"
         "padding:2px 8px; font-size:11px; color:#8b949e;");
     connect(m_tagInput, &QLineEdit::returnPressed,
-            this,       &SnippetEditor::onAddTag);
+            this, &SnippetEditor::onAddTag);
 
     m_tagsLayout->addWidget(m_tagInput);
     m_tagsLayout->addStretch();
@@ -237,7 +298,6 @@ void SnippetEditor::buildTagsBar()
 
 void SnippetEditor::rebuildTagChips()
 {
-    // Remove all chip widgets (leave m_tagInput and the stretch)
     QList<QWidget*> chips;
     for (int i = 0; i < m_tagsLayout->count(); ++i) {
         auto* item = m_tagsLayout->itemAt(i);
@@ -264,7 +324,6 @@ void SnippetEditor::rebuildTagChips()
             rebuildTagChips();
             scheduleAutoSave();
         });
-        // Insert before the stretch (last item)
         m_tagsLayout->insertWidget(m_tagsLayout->count() - 1, chip);
     }
 }
