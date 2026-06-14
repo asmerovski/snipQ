@@ -17,6 +17,7 @@ public:
 
     void loadFor(const SidebarSelection& sel);
     void refresh();
+    void selectSnippet(int snippetId);  // selects item in list without reloading
 
 signals:
     void snippetSelected(int snippetId);

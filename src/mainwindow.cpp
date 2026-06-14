@@ -80,10 +80,26 @@ MainWindow::MainWindow(QWidget* parent)
     connect(m_db, &Database::dataChanged,
             this, &MainWindow::onDataChanged);
 
-    // Initial load
+    // Initial load — populate the list with All Snippets
     SidebarSelection defSel;
     defSel.type = SidebarSelection::AllSnippets;
     onSidebarSelection(defSel);
+
+    // Restore last opened snippet after the event loop starts,
+    // so the list is fully rendered before we select into it.
+    int lastId = m_settings.value("session/lastSnippetId", -1).toInt();
+    if (lastId >= 0) {
+        QMetaObject::invokeMethod(this, [this, lastId]() {
+            Snippet s = m_db->snippetById(lastId);
+            if (!s.isValid() || s.isDeleted) return;
+            // Select the item in the list (scrolls to it + highlights it)
+            m_snippetList->selectSnippet(lastId);
+            // Open it in the editor
+            m_editor->loadSnippet(lastId);
+            statusBar()->showMessage(
+                QStringLiteral("Restored: %1").arg(s.name), 2000);
+        }, Qt::QueuedConnection);
+    }
 }
 
 MainWindow::~MainWindow() {
@@ -216,6 +232,7 @@ void MainWindow::onSidebarSelection(const SidebarSelection& sel) {
 
 void MainWindow::onSnippetSelected(int id) {
     m_editor->loadSnippet(id);
+    m_settings.setValue("session/lastSnippetId", id);
 }
 
 void MainWindow::onNewFolder(int parentId) {

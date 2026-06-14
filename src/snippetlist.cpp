@@ -175,6 +175,21 @@ SnippetList::SnippetList(Database* db, QWidget* parent)
             this,        &SnippetList::onContextMenu);
 }
 
+void SnippetList::selectSnippet(int snippetId)
+{
+    for (int i = 0; i < m_list->count(); ++i) {
+        QListWidgetItem* item = m_list->item(i);
+        if (item && item->data(RoleSnippetId).toInt() == snippetId) {
+            // Block signal so onCurrentRowChanged doesn't fire and re-open
+            // the snippet redundantly (mainwindow already calls loadSnippet)
+            QSignalBlocker sb(m_list);
+            m_list->setCurrentItem(item);
+            m_list->scrollToItem(item, QAbstractItemView::PositionAtCenter);
+            return;
+        }
+    }
+}
+
 void SnippetList::loadFor(const SidebarSelection& sel)
 {
     m_sel   = sel;
