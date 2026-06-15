@@ -93,7 +93,6 @@ brew install qt cmake
 ```bash
 git clone https://github.com/you/snipQ
 cd snipQ
-cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
 ./build/snipQ
 ```

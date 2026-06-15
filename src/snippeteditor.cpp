@@ -31,6 +31,25 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
     m_titleEdit->setPlaceholderText("Snippet name\u2026");
     lay->addWidget(m_titleEdit);
 
+    // ── Description ──────────────────────────────────────────
+    m_descEdit = new QLineEdit(this);
+    m_descEdit->setObjectName("SnippetDescription");
+    m_descEdit->setPlaceholderText("Short description (optional)\u2026");
+    m_descEdit->setStyleSheet(
+        "QLineEdit#SnippetDescription {"
+        "  background: transparent;"
+        "  border: none;"
+        "  border-bottom: 1px solid #21262d;"
+        "  padding: 5px 16px;"
+        "  font-size: 12px;"
+        "  color: #8b949e;"
+        "}"
+        "QLineEdit#SnippetDescription:focus {"
+        "  border-bottom-color: #388bfd;"
+        "  color: #c9d1d9;"
+        "}");
+    lay->addWidget(m_descEdit);
+
     // ── Toolbar ──────────────────────────────────────────────
     auto* toolbar = new QToolBar(this);
     toolbar->setMovable(false);
@@ -108,6 +127,8 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
             this,         &SnippetEditor::autoSave);
     connect(m_titleEdit,  &QLineEdit::textChanged,
             this,         &SnippetEditor::onTitleChanged);
+    connect(m_descEdit,   &QLineEdit::textChanged,
+            this,         &SnippetEditor::onDescriptionChanged);
     connect(m_editor,     &QPlainTextEdit::textChanged,
             this,         &SnippetEditor::onContentChanged);
     connect(m_langCombo,  &QComboBox::currentTextChanged,
@@ -128,6 +149,8 @@ void SnippetEditor::clearEditor()
     m_snippet = Snippet{};
     m_titleEdit->clear();
     m_titleEdit->setEnabled(false);
+    m_descEdit->clear();
+    m_descEdit->setEnabled(false);
     m_editor->clear();
     m_editor->setEnabled(false);
     m_langCombo->setEnabled(false);
@@ -158,6 +181,7 @@ void SnippetEditor::loadSnippet(int id)
     }
 
     m_titleEdit->setEnabled(true);
+    m_descEdit->setEnabled(true);
     m_editor->setEnabled(true);
     m_langCombo->setEnabled(true);
 
@@ -168,6 +192,7 @@ void SnippetEditor::loadSnippet(int id)
         QSignalBlocker lb(m_langCombo);
 
         m_titleEdit->setText(m_snippet.name);
+        m_descEdit->setText(m_snippet.description);
         m_editor->setPlainText(m_snippet.content);
 
         // Move cursor to top without triggering scroll-jump
@@ -203,6 +228,13 @@ void SnippetEditor::onTitleChanged(const QString& text)
 {
     if (m_loading || !m_snippet.isValid()) return;
     m_snippet.name = text;
+    scheduleAutoSave();
+}
+
+void SnippetEditor::onDescriptionChanged(const QString& text)
+{
+    if (m_loading || !m_snippet.isValid()) return;
+    m_snippet.description = text;
     scheduleAutoSave();
 }
 
@@ -269,7 +301,8 @@ void SnippetEditor::onAddTag()
 void SnippetEditor::autoSave()
 {
     if (!m_dirty || !m_snippet.isValid()) return;
-    m_snippet.content = m_editor->toPlainText();
+    m_snippet.content     = m_editor->toPlainText();
+    m_snippet.description = m_descEdit->text().trimmed();
     m_db->updateSnippet(m_snippet);
     m_dirty = false;
     emit snippetModified(m_snippet.id);

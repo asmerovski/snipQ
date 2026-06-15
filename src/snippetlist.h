@@ -18,6 +18,7 @@ public:
     void loadFor(const SidebarSelection& sel);
     void refresh();
     void selectSnippet(int snippetId);  // selects item in list without reloading
+    void pinSnippet(int snippetId);     // survive refresh() until user clicks
 
 signals:
     void snippetSelected(int snippetId);
@@ -52,4 +53,5 @@ private:
     SortMode         m_sortMode  = SortName;
     bool             m_ascending = true;
     bool             m_isBin     = false;
+    int              m_pinnedId  = -1;  // persists across refresh() until user clicks
 };

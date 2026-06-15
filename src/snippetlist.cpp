@@ -175,6 +175,11 @@ SnippetList::SnippetList(Database* db, QWidget* parent)
             this,        &SnippetList::onContextMenu);
 }
 
+void SnippetList::pinSnippet(int snippetId)
+{
+    m_pinnedId = snippetId;
+}
+
 void SnippetList::selectSnippet(int snippetId)
 {
     for (int i = 0; i < m_list->count(); ++i) {
@@ -247,10 +252,15 @@ QList<Snippet> SnippetList::sortedSnippets(QList<Snippet> list) const
 
 void SnippetList::populateList(const QList<Snippet>& snippets)
 {
-    int selId   = -1;
+    // Prefer the pinned ID over whatever currentItem happens to be.
+    // The pin survives multiple refresh() calls (e.g. queued onDataChanged)
+    // until it's found and rendered — then it's cleared.
+    int selId = (m_pinnedId >= 0) ? m_pinnedId
+              : (m_list->currentItem()
+                 ? m_list->currentItem()->data(RoleSnippetId).toInt()
+                 : -1);
+
     int scrollY = m_list->verticalScrollBar()->value();
-    if (auto* cur = m_list->currentItem())
-        selId = cur->data(RoleSnippetId).toInt();
 
     m_list->blockSignals(true);
     m_list->clear();
@@ -270,8 +280,13 @@ void SnippetList::populateList(const QList<Snippet>& snippets)
     if (toSelect) {
         QSignalBlocker sb(m_list);
         m_list->setCurrentItem(toSelect);
+        m_list->scrollToItem(toSelect, QAbstractItemView::PositionAtCenter);
+        m_pinnedId = -1;  // consumed — item is visible and selected
+    } else {
+        // selId not found in this list (e.g. wrong sidebar section) —
+        // keep the pin alive so a later refresh in the right section finds it
+        m_list->verticalScrollBar()->setValue(scrollY);
     }
-    m_list->verticalScrollBar()->setValue(scrollY);
 }
 
 void SnippetList::filterList(const QString& query)
@@ -301,6 +316,7 @@ void SnippetList::updateDirectionButton()
 
 void SnippetList::onCurrentRowChanged(int)
 {
+    m_pinnedId = -1;  // user clicked — pin no longer needed
     auto* item = m_list->currentItem();
     if (item) emit snippetSelected(item->data(RoleSnippetId).toInt());
 }

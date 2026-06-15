@@ -25,6 +25,7 @@ signals:
 
 private slots:
     void onTitleChanged(const QString& text);
+    void onDescriptionChanged(const QString& text);
     void onContentChanged();
     void onLanguageChanged(const QString& lang);
     void onAddTag();
@@ -44,7 +45,8 @@ private:
     bool            m_dirty   = false;
 
     QLineEdit*      m_titleEdit;
-    CodeEditor*     m_editor;       // ← CodeEditor with gutter + smart keys
+    QLineEdit*      m_descEdit;      // ← description field
+    CodeEditor*     m_editor;
     QComboBox*      m_langCombo;
     QWidget*        m_tagsBar;
     QHBoxLayout*    m_tagsLayout;
