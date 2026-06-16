@@ -5,6 +5,18 @@
 #include "snippet.h"
 #include "folder.h"
 
+// Result of an import operation
+struct ImportResult {
+    bool    success        = false;
+    int     snippetsTotal  = 0;  // in the JSON file
+    int     snippetsAdded  = 0;  // actually inserted
+    int     snippetsSkipped= 0;  // skipped as duplicates
+    int     foldersTotal   = 0;
+    int     foldersAdded   = 0;
+    int     foldersSkipped = 0;
+    QStringList duplicateNames;  // names of skipped snippets
+};
+
 class Database : public QObject {
     Q_OBJECT
 
@@ -41,8 +53,11 @@ public:
     QStringList allTags();
 
     // ── Import / Export ──
-    QJsonObject exportToJson();
-    bool        importFromJson(const QJsonObject& json);
+    QJsonObject  exportToJson();
+    ImportResult importFromJson(const QJsonObject& json, bool skipDuplicates = true);
+
+    // Check duplicates without importing
+    ImportResult previewImport(const QJsonObject& json);
 
 signals:
     void dataChanged();
@@ -50,6 +65,8 @@ signals:
 private:
     bool createSchema();
     Snippet rowToSnippet(const QSqlQuery& q);
+    bool snippetExistsByName(const QString& name) const;
+    bool folderExistsByName(const QString& name) const;
 
     QSqlDatabase m_db;
     QString      m_path;

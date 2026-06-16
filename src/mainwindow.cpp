@@ -12,7 +12,9 @@
 #include <QMessageBox>
 #include <QStandardPaths>
 #include <QDir>
+#include <QFileInfo>
 #include <QApplication>
+#include <QPushButton>
 #include <QLabel>
 #include <QCloseEvent>
 
@@ -293,13 +295,102 @@ void MainWindow::onImport() {
     QString path = QFileDialog::getOpenFileName(this, "Import Snippets",
         QDir::homePath(), "JSON Files (*.json)");
     if (path.isEmpty()) return;
-    if (m_io->importFromFile(path)) {
-        m_sidebar->refresh();
-        m_snippetList->refresh();
-        statusBar()->showMessage("Import complete.", 4000);
-    } else {
-        QMessageBox::warning(this, "Import Failed", "Could not parse the JSON file.");
+
+    // Preview the file first — no DB changes yet
+    ImportResult preview = m_io->previewFile(path);
+    if (!preview.success && preview.snippetsTotal == 0 && preview.foldersTotal == 0) {
+        QMessageBox::warning(this, "Import Failed",
+            "Could not parse the JSON file or it contains no data.");
+        return;
     }
+
+    // Build an informative message
+    bool hasDupes = (preview.snippetsSkipped > 0 || preview.foldersSkipped > 0);
+    bool hasNew   = (preview.snippetsAdded   > 0 || preview.foldersAdded   > 0);
+
+    QString msg;
+    msg += QStringLiteral(
+        "<b>Import summary</b> for:<br><code>%1</code><br><br>"
+        "<table cellspacing='4'>"
+        "<tr><td>Snippets in file:</td><td><b>%2</b></td></tr>"
+        "<tr><td>New (will be added):</td><td style='color:#3fb950'><b>%3</b></td></tr>"
+        "<tr><td>Duplicates (same name exists):</td><td style='color:#f0883e'><b>%4</b></td></tr>"
+        "<tr><td>Folders in file:</td><td><b>%5</b></td></tr>"
+        "<tr><td>New folders:</td><td style='color:#3fb950'><b>%6</b></td></tr>"
+        "<tr><td>Duplicate folders:</td><td style='color:#f0883e'><b>%7</b></td></tr>"
+        "</table>")
+        .arg(QFileInfo(path).fileName())
+        .arg(preview.snippetsTotal)
+        .arg(preview.snippetsAdded)
+        .arg(preview.snippetsSkipped)
+        .arg(preview.foldersTotal)
+        .arg(preview.foldersAdded)
+        .arg(preview.foldersSkipped);
+
+    if (hasDupes && !preview.duplicateNames.isEmpty()) {
+        QStringList shown = preview.duplicateNames.mid(0, 8);
+        if (preview.duplicateNames.size() > 8)
+            shown << QStringLiteral("… and %1 more")
+                     .arg(preview.duplicateNames.size() - 8);
+        msg += QStringLiteral("<br><br><b style='color:#f0883e'>⚠ Duplicate snippets:</b><br>")
+             + shown.join("<br>");
+    }
+
+    if (hasDupes) {
+        msg += QStringLiteral(
+            "<br><br><b style='color:#f0883e'>Warning:</b> Importing duplicates "
+            "will create multiple snippets with the same name, which can cause "
+            "confusion. Choose <b>Skip Duplicates</b> to import only new items, "
+            "or <b>Import All</b> to import everything regardless.");
+    }
+
+    if (!hasNew && !hasDupes) {
+        QMessageBox::information(this, "Nothing to Import",
+            "All snippets in this file already exist in your library.");
+        return;
+    }
+
+    // Build button set based on what's present
+    QMessageBox dlg(this);
+    dlg.setWindowTitle("Import Snippets");
+    dlg.setTextFormat(Qt::RichText);
+    dlg.setText(msg);
+    dlg.setIcon(hasDupes ? QMessageBox::Warning : QMessageBox::Question);
+
+    QPushButton* btnSkip   = nullptr;
+    QPushButton* btnAll    = nullptr;
+    QPushButton* btnCancel = dlg.addButton("Cancel", QMessageBox::RejectRole);
+
+    if (hasDupes && hasNew)
+        btnSkip = dlg.addButton("Skip Duplicates", QMessageBox::AcceptRole);
+    if (hasDupes)
+        btnAll  = dlg.addButton("Import All", QMessageBox::DestructiveRole);
+    if (!hasDupes)
+        btnSkip = dlg.addButton("Import", QMessageBox::AcceptRole);
+
+    dlg.setDefaultButton(btnSkip ? btnSkip : btnCancel);
+    dlg.exec();
+
+    QAbstractButton* clicked = dlg.clickedButton();
+    if (clicked == btnCancel || clicked == nullptr) return;
+
+    bool skipDuplicates = (clicked != btnAll);
+
+    ImportResult result = m_io->importFromFile(path, skipDuplicates);
+    if (!result.success) {
+        QMessageBox::warning(this, "Import Failed",
+            "The import transaction failed. No changes were made.");
+        return;
+    }
+
+    m_sidebar->refresh();
+    m_snippetList->refresh();
+
+    QString summary = QStringLiteral(
+        "Import complete: %1 snippet(s) added, %2 skipped.")
+        .arg(result.snippetsAdded)
+        .arg(result.snippetsSkipped);
+    statusBar()->showMessage(summary, 5000);
 }
 
 void MainWindow::onSettings() {

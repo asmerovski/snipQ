@@ -6,6 +6,8 @@
 #include <QClipboard>
 #include <QToolBar>
 #include <QTextBlock>
+#include <QDateTime>
+#include <QFileInfo>
 
 static const QStringList LANGUAGES = {
     "plaintext","bash","c","cpp","csharp","css","dart","diff","dockerfile",
@@ -49,6 +51,21 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
         "  color: #c9d1d9;"
         "}");
     lay->addWidget(m_descEdit);
+
+    // ── Timestamps ───────────────────────────────────────────
+    m_timestampBar = new QLabel(this);
+    m_timestampBar->setObjectName("TimestampBar");
+    m_timestampBar->setStyleSheet(
+        "QLabel#TimestampBar {"
+        "  background: transparent;"
+        "  color: #484f58;"
+        "  font-size: 10px;"
+        "  padding: 3px 16px 3px 16px;"
+        "  border-bottom: 1px solid #21262d;"
+        "}");
+    m_timestampBar->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    m_timestampBar->setTextFormat(Qt::PlainText);
+    lay->addWidget(m_timestampBar);
 
     // ── Toolbar ──────────────────────────────────────────────
     auto* toolbar = new QToolBar(this);
@@ -151,6 +168,7 @@ void SnippetEditor::clearEditor()
     m_titleEdit->setEnabled(false);
     m_descEdit->clear();
     m_descEdit->setEnabled(false);
+    m_timestampBar->clear();
     m_editor->clear();
     m_editor->setEnabled(false);
     m_langCombo->setEnabled(false);
@@ -205,6 +223,28 @@ void SnippetEditor::loadSnippet(int id)
     }
 
     applyLanguage(m_snippet.language);
+
+    // Format timestamps — show local time, human-friendly
+    auto fmtDt = [](const QDateTime& dt) -> QString {
+        if (!dt.isValid()) return QStringLiteral("unknown");
+        QDateTime local = dt.toLocalTime();
+        // If within last 7 days show relative, otherwise full date
+        qint64 secsAgo = local.secsTo(QDateTime::currentDateTime());
+        if (secsAgo < 60)
+            return QStringLiteral("just now");
+        if (secsAgo < 3600)
+            return QStringLiteral("%1 min ago").arg(secsAgo / 60);
+        if (secsAgo < 86400)
+            return QStringLiteral("%1 hr ago").arg(secsAgo / 3600);
+        if (secsAgo < 7 * 86400)
+            return QStringLiteral("%1 days ago").arg(secsAgo / 86400);
+        return local.toString("d MMM yyyy  hh:mm");
+    };
+
+    m_timestampBar->setText(
+        QStringLiteral("Created: %1   \u2502   Modified: %2")
+        .arg(fmtDt(m_snippet.createdAt),
+             fmtDt(m_snippet.updatedAt)));
     rebuildTagChips();
     m_charCount->setText(
         QStringLiteral("%1 chars").arg(m_snippet.content.length()));

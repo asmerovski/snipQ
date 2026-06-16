@@ -45,7 +45,8 @@ private:
     bool            m_dirty   = false;
 
     QLineEdit*      m_titleEdit;
-    QLineEdit*      m_descEdit;      // ← description field
+    QLineEdit*      m_descEdit;
+    QLabel*         m_timestampBar;  // ← created / modified line
     CodeEditor*     m_editor;
     QComboBox*      m_langCombo;
     QWidget*        m_tagsBar;

@@ -329,20 +329,87 @@ QJsonObject Database::exportToJson() {
     return root;
 }
 
-bool Database::importFromJson(const QJsonObject& json) {
-    m_db.transaction();
-    QMap<int,int> folderIdMap;
+bool Database::snippetExistsByName(const QString& name) const {
+    QSqlQuery q(m_db);
+    q.prepare("SELECT COUNT(*) FROM snippets WHERE name=:n AND is_deleted=0");
+    q.bindValue(":n", name);
+    q.exec();
+    return q.next() && q.value(0).toInt() > 0;
+}
+
+bool Database::folderExistsByName(const QString& name) const {
+    QSqlQuery q(m_db);
+    q.prepare("SELECT COUNT(*) FROM folders WHERE name=:n");
+    q.bindValue(":n", name);
+    q.exec();
+    return q.next() && q.value(0).toInt() > 0;
+}
+
+ImportResult Database::previewImport(const QJsonObject& json) {
+    ImportResult r;
+    r.foldersTotal  = json["folders"].toArray().size();
+    r.snippetsTotal = json["snippets"].toArray().size();
+
     for (auto fv : json["folders"].toArray()) {
         auto fo = fv.toObject();
-        Folder f;
-        f.name     = fo["name"].toString();
-        f.parentId = fo["parentId"].toInt(-1);
-        if (insertFolder(f)) folderIdMap[fo["id"].toInt()] = f.id;
+        if (folderExistsByName(fo["name"].toString()))
+            r.foldersSkipped++;
+        else
+            r.foldersAdded++;
     }
     for (auto sv : json["snippets"].toArray()) {
         auto so = sv.toObject();
+        QString name = so["name"].toString();
+        if (snippetExistsByName(name)) {
+            r.snippetsSkipped++;
+            r.duplicateNames << name;
+        } else {
+            r.snippetsAdded++;
+        }
+    }
+    return r;
+}
+
+ImportResult Database::importFromJson(const QJsonObject& json, bool skipDuplicates) {
+    ImportResult r;
+    r.snippetsTotal = json["snippets"].toArray().size();
+    r.foldersTotal  = json["folders"].toArray().size();
+
+    m_db.transaction();
+
+    QMap<int,int> folderIdMap;
+    for (auto fv : json["folders"].toArray()) {
+        auto fo = fv.toObject();
+        QString name = fo["name"].toString();
+        if (skipDuplicates && folderExistsByName(name)) {
+            // Reuse existing folder id so snippets map correctly
+            QSqlQuery q(m_db);
+            q.prepare("SELECT id FROM folders WHERE name=:n LIMIT 1");
+            q.bindValue(":n", name);
+            q.exec();
+            if (q.next()) folderIdMap[fo["id"].toInt()] = q.value(0).toInt();
+            r.foldersSkipped++;
+            continue;
+        }
+        Folder f;
+        f.name     = name;
+        f.parentId = fo["parentId"].toInt(-1);
+        if (insertFolder(f)) {
+            folderIdMap[fo["id"].toInt()] = f.id;
+            r.foldersAdded++;
+        }
+    }
+
+    for (auto sv : json["snippets"].toArray()) {
+        auto so = sv.toObject();
+        QString name = so["name"].toString();
+        if (skipDuplicates && snippetExistsByName(name)) {
+            r.snippetsSkipped++;
+            r.duplicateNames << name;
+            continue;
+        }
         Snippet s;
-        s.name        = so["name"].toString();
+        s.name        = name;
         s.description = so["description"].toString();
         s.content     = so["content"].toString();
         s.language    = so["language"].toString("plaintext");
@@ -350,11 +417,12 @@ bool Database::importFromJson(const QJsonObject& json) {
         s.folderId    = folderIdMap.value(so["folderId"].toInt(-1), -1);
         s.isFavorite  = so["isFavorite"].toBool();
         s.isDeleted   = so["isDeleted"].toBool();
-        insertSnippet(s);
+        if (insertSnippet(s)) r.snippetsAdded++;
     }
-    bool ok = m_db.commit();
-    if (!ok) m_db.rollback();
-    return ok;
+
+    r.success = m_db.commit();
+    if (!r.success) m_db.rollback();
+    return r;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
