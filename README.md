@@ -11,49 +11,15 @@ Runs natively on **Windows**, **Linux**, and **macOS** — no Electron, no web r
 | Feature | Details |
 |---|---|
 | **Sidebar tree** | Library (Favourites, All Snippets, Bin) · Folders · Tags |
-| **Multi-tab snippets** | Each snippet can have multiple code fragments (tabs) |
 | **Language tagging** | 37 languages in the combo (bash, Python, Rust, TypeScript, …) |
 | **Tag system** | Inline tag chips on every snippet, filterable from sidebar |
 | **Auto-save** | Debounced 800 ms auto-save while you type |
 | **Export / Import** | Full JSON round-trip (snippets + folders + tabs + tags) |
 | **Movable storage** | Relocate the SQLite DB to any path — NAS, external drive, etc. |
-| **Cloud sync** | Google Drive · OneDrive · Dropbox · Box · FTP/FTPS · SMB/Samba |
+| **TODO :: Cloud sync** | Google Drive · OneDrive · Dropbox · Box · FTP/FTPS · SMB/Samba |
 | **Dark theme** | GitHub Dark–inspired palette, monospace editor |
 | **Bin / restore** | Soft-delete with restore, permanent delete from Bin view |
 
----
-
-## 📐 Architecture
-
-```
-snipQ/
-├── CMakeLists.txt
-├── resources/
-│   └── resources.qrc
-└── src/
-    ├── main.cpp
-    ├── mainwindow.{h,cpp}       # Top-level shell, menu bar, wires everything
-    ├── theme.h                  # Full QSS dark theme + color constants
-    ├── database.{h,cpp}         # SQLite via QtSql — all CRUD + import/export
-    ├── importexport.{h,cpp}     # JSON file I/O wrapper
-    ├── sidebar.{h,cpp}          # Tree sidebar (Library / Folders / Tags)
-    ├── snippetlist.{h,cpp}      # Middle panel — list + search
-    ├── snippeteditor.{h,cpp}    # Right panel — title, tabbed editor, tags bar
-    ├── models/
-    │   ├── snippet.h            # Snippet + SnippetTab structs
-    │   └── folder.h             # Folder struct
-    ├── dialogs/
-    │   ├── newfolderdialog.{h,cpp}
-    │   ├── newsnippetdialog.{h,cpp}
-    │   ├── settingsdialog.{h,cpp}    # Movable storage UI
-    │   └── cloudsyncdialog.{h,cpp}   # Cloud provider config + sync trigger
-    └── sync/
-        ├── syncmanager.{h,cpp}  # Dispatches to per-provider sync
-        ├── ftpsync.{h,cpp}      # FTP/FTPS via Qt Network (PUT)
-        └── smbsync.{h,cpp}      # SMB via UNC (Win) or smbclient (Linux/macOS)
-```
-
----
 
 ## 🔧 Prerequisites
 
@@ -144,36 +110,6 @@ snipQ stores all data in a single **SQLite** file (default locations):
 | macOS | `~/Library/Application Support/snipQ/snipQ.db` |
 | Windows | `%APPDATA%\snipQ\snipQ\snipQ.db` |
 
-### Schema
-
-```sql
-CREATE TABLE folders (
-    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-    name      TEXT NOT NULL,
-    parent_id INTEGER DEFAULT -1
-);
-
-CREATE TABLE snippets (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    name        TEXT NOT NULL DEFAULT 'Untitled',
-    description TEXT DEFAULT '',
-    tags        TEXT DEFAULT '',          -- comma-separated
-    folder_id   INTEGER DEFAULT -1,
-    is_favorite INTEGER DEFAULT 0,
-    is_deleted  INTEGER DEFAULT 0,
-    created_at  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL
-);
-
-CREATE TABLE snippet_tabs (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    snippet_id INTEGER NOT NULL REFERENCES snippets(id) ON DELETE CASCADE,
-    tab_index  INTEGER NOT NULL DEFAULT 0,
-    name       TEXT NOT NULL DEFAULT 'Fragment 1',
-    content    TEXT DEFAULT '',
-    language   TEXT DEFAULT 'plaintext'
-);
-```
 
 ---
 
@@ -211,7 +147,7 @@ CREATE TABLE snippet_tabs (
 
 ---
 
-## ☁️ Cloud Sync
+## ☁️ Cloud Sync - WIP
 
 Go to **Sync → Cloud Sync…**
 
