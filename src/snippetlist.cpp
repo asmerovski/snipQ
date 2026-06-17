@@ -104,7 +104,7 @@ SnippetList::SnippetList(Database* db, QWidget* parent)
 
     auto* addBtn = new QToolButton(this);
     addBtn->setText("+");
-    addBtn->setToolTip("New Snippet");
+    addBtn->setToolTip("New Snippet (Ctrl+N)");
     addBtn->setStyleSheet(
         "QToolButton{background:#1f6feb;color:#fff;border-radius:5px;"
         "font-size:16px;padding:0 6px;border:none;}"
