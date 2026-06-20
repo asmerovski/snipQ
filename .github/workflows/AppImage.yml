@@ -1,81 +1,104 @@
-name: Qt6 Build & Deploy
+name: AppImage
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
 
 jobs:
-  build-linux-appimage:
-    runs-on: ubuntu-24.04
+  build-appimage:
+    name: Build Linux AppImage (Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+
     steps:
-      - name: Checkout source
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Qt6 & Build Essentials
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake qt6-base-dev qt6-base-dev-tools
+      # ── Dependencies ────────────────────────────────────────────────────────
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: >
+            build-essential
+            cmake
+            ninja-build
+            qt6-base-dev
+            qt6-base-dev-tools
+            libqt6sql6-sqlite
+            libgl-dev
+            libxkbcommon-dev
+            libvulkan-dev
+            libfuse2
+          version: 1.0
 
-      - name: Configure and Build
+      # ── Build ───────────────────────────────────────────────────────────────
+      - name: Configure
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel $(nproc)
-          DESTDIR=AppDir cmake --install build
+          cmake -B build -S . \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr
 
-      - name: Download Linuxdeploy + Qt Plugin
+      - name: Build
+        run: cmake --build build --parallel $(nproc)
+
+      # ── Stage AppDir ────────────────────────────────────────────────────────
+      - name: Install into AppDir
+        run: DESTDIR=${{ github.workspace }}/AppDir cmake --install build
+
+      - name: Write desktop entry
+        run: |
+          mkdir -p AppDir/usr/share/applications
+          cat > AppDir/usr/share/applications/snipQ.desktop << 'DESKTOP'
+          [Desktop Entry]
+          Type=Application
+          Name=snipQ
+          Comment=Cross-platform code snippet manager
+          Exec=snipQ
+          Icon=snipQ
+          Categories=Development;Utility;
+          Keywords=snippet;code;clipboard;
+          DESKTOP
+
+      - name: Copy icon
+        run: |
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          cp resources/app.png AppDir/usr/share/icons/hicolor/256x256/apps/snipQ.png
+          mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
+          cp resources/app.svg AppDir/usr/share/icons/hicolor/scalable/apps/snipQ.svg
+
+      # ── Package AppImage ────────────────────────────────────────────────────
+      - name: Download linuxdeploy + Qt plugin
         run: |
           wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
-          chmod +x linuxdeploy*.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
 
-      - name: Pack AppImage
+      - name: Build AppImage
+        env:
+          QMAKE: /usr/lib/qt6/bin/qmake
+          OUTPUT: snipQ-linux-x86_64.AppImage
         run: |
-          # Create a basic desktop file and icon if your build system doesn't install them
-          mkdir -p AppDir/usr/share/applications
-          echo -e "[Desktop Entry]\nType=Application\nName=QtApp\nExec=myapp\nIcon=qtapp\nCategories=Utility;" > AppDir/usr/share/applications/qtapp.desktop
-          touch AppDir/usr/share/icons/qtapp.png
-          
-          # Run packaging tool
-          ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin qt --output appimage
+          ./linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --plugin qt \
+            --output appimage \
+            --desktop-file AppDir/usr/share/applications/snipQ.desktop \
+            --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/snipQ.png
 
-      - name: Upload Linux Artifact
+      # ── Artifact / Release ──────────────────────────────────────────────────
+      - name: Upload AppImage artifact
         uses: actions/upload-artifact@v4
         with:
-          name: QtApp-Linux-AppImage
-          path: "*.AppImage"
+          name: snipQ-linux-x86_64
+          path: snipQ-linux-x86_64.AppImage
+          if-no-files-found: error
 
-  build-windows-bundle:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-
-      - name: Install Qt6
-        uses: jurplel/install-qt-action@v3
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
         with:
-          version: '6.7.0' # Adjust to match your preferred Qt6 minor version
-          host: 'windows'
-          target: 'desktop'
-          arch: 'win64_msvc2019_64'
-
-      - name: Setup MSVC Environment
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Configure and Build
-        run: |
-          cmake -B build -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --config Release
-
-      - name: Deploy Windows Dependencies (windeployqt)
-        shell: pwsh
-        run: |
-          mkdir deploy
-          # Copy raw executable (Adjust path based on your CMake target output configuration)
-          cp build/Release/*.exe deploy/
-          # Deploy dynamic dependencies
-          windeployqt --no-compiler-runtime deploy/
-
-      - name: Upload Windows Bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: QtApp-Windows-Package
-          path: deploy/
-          
+          files: snipQ-linux-x86_64.AppImage
