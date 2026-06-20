@@ -64,6 +64,8 @@ MainWindow::MainWindow(QWidget* parent)
             this,      &MainWindow::onRenameFolder);
     connect(m_sidebar, &Sidebar::deleteFolderRequested,
             this,      &MainWindow::onDeleteFolder);
+    connect(m_sidebar, &Sidebar::emptyTrashRequested,
+            this,      &MainWindow::onEmptyTrash);
 
     connect(m_snippetList, &SnippetList::snippetSelected,
             this,          &MainWindow::onSnippetSelected);
@@ -266,6 +268,24 @@ void MainWindow::onRenameFolder(int id) {
     f.name = dlg.folderName();
     m_db->updateFolder(f);
     m_sidebar->refresh();
+}
+
+void MainWindow::onEmptyTrash() {
+    int count = m_db->deletedSnippets().size();
+    if (count == 0) {
+        statusBar()->showMessage("Trash is already empty.", 2000);
+        return;
+    }
+    if (QMessageBox::question(this, "Empty Trash",
+            QStringLiteral("Permanently delete all %1 snippet(s) in the Bin?\n"
+                           "This cannot be undone.").arg(count))
+        != QMessageBox::Yes) return;
+
+    m_db->emptyTrash();
+    m_editor->clearEditor();
+    m_snippetList->refresh();
+    statusBar()->showMessage(
+        QStringLiteral("Trash emptied: %1 snippet(s) deleted.").arg(count), 3000);
 }
 
 void MainWindow::onDeleteFolder(int id) {

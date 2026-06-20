@@ -9,6 +9,9 @@
 #include <QDateTime>
 #include <QFileInfo>
 
+static constexpr int SNIPPET_NAME_MAX = 256;
+static constexpr int SNIPPET_DESC_MAX = 512;
+
 static const QStringList LANGUAGES = {
     "plaintext","bash","c","cpp","csharp","css","dart","diff","dockerfile",
     "go","graphql","html","http","java","javascript","json","kotlin","latex",
@@ -28,15 +31,29 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
     lay->setSpacing(0);
 
     // ── Title ────────────────────────────────────────────────
+    auto* titleRow = new QHBoxLayout;
+    titleRow->setContentsMargins(0, 0, 0, 0);
+    titleRow->setSpacing(0);
     m_titleEdit = new QLineEdit(this);
     m_titleEdit->setObjectName("SnippetTitle");
     m_titleEdit->setPlaceholderText("Snippet name\u2026");
-    lay->addWidget(m_titleEdit);
+    m_titleEdit->setMaxLength(SNIPPET_NAME_MAX);
+    titleRow->addWidget(m_titleEdit, 1);
+    m_titleCounter = new QLabel(QStringLiteral("0/%1").arg(SNIPPET_NAME_MAX), this);
+    m_titleCounter->setObjectName("FieldCounter");
+    m_titleCounter->setStyleSheet("font-size:10px; color:#484f58; padding:0 6px;");
+    m_titleCounter->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    titleRow->addWidget(m_titleCounter);
+    lay->addLayout(titleRow);
 
     // ── Description ──────────────────────────────────────────
+    auto* descRow = new QHBoxLayout;
+    descRow->setContentsMargins(0, 0, 0, 0);
+    descRow->setSpacing(0);
     m_descEdit = new QLineEdit(this);
     m_descEdit->setObjectName("SnippetDescription");
     m_descEdit->setPlaceholderText("Short description (optional)\u2026");
+    m_descEdit->setMaxLength(SNIPPET_DESC_MAX);
     m_descEdit->setStyleSheet(
         "QLineEdit#SnippetDescription {"
         "  background: transparent;"
@@ -50,7 +67,13 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
         "  border-bottom-color: #388bfd;"
         "  color: #c9d1d9;"
         "}");
-    lay->addWidget(m_descEdit);
+    descRow->addWidget(m_descEdit, 1);
+    m_descCounter = new QLabel(QStringLiteral("0/%1").arg(SNIPPET_DESC_MAX), this);
+    m_descCounter->setObjectName("FieldCounter");
+    m_descCounter->setStyleSheet("font-size:10px; color:#484f58; padding:0 6px;");
+    m_descCounter->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    descRow->addWidget(m_descCounter);
+    lay->addLayout(descRow);
 
     // ── Timestamps ───────────────────────────────────────────
     m_timestampBar = new QLabel(this);
@@ -144,8 +167,12 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
             this,         &SnippetEditor::autoSave);
     connect(m_titleEdit,  &QLineEdit::textChanged,
             this,         &SnippetEditor::onTitleChanged);
+    connect(m_titleEdit,  &QLineEdit::textChanged,
+            this,         [this](const QString& t){ updateTitleCounter(t); });
     connect(m_descEdit,   &QLineEdit::textChanged,
             this,         &SnippetEditor::onDescriptionChanged);
+    connect(m_descEdit,   &QLineEdit::textChanged,
+            this,         [this](const QString& t){ updateDescCounter(t); });
     connect(m_editor,     &QPlainTextEdit::textChanged,
             this,         &SnippetEditor::onContentChanged);
     connect(m_langCombo,  &QComboBox::currentTextChanged,
@@ -169,6 +196,8 @@ void SnippetEditor::clearEditor()
     m_descEdit->clear();
     m_descEdit->setEnabled(false);
     m_timestampBar->clear();
+    updateTitleCounter({});
+    updateDescCounter({});
     m_editor->clear();
     m_editor->setEnabled(false);
     m_langCombo->setEnabled(false);
@@ -212,6 +241,7 @@ void SnippetEditor::loadSnippet(int id)
         m_titleEdit->setText(m_snippet.name);
         m_descEdit->setText(m_snippet.description);
         m_editor->setPlainText(m_snippet.content);
+        m_editor->setPlainText(m_snippet.content);
 
         // Move cursor to top without triggering scroll-jump
         QTextCursor tc = m_editor->textCursor();
@@ -223,6 +253,9 @@ void SnippetEditor::loadSnippet(int id)
     }
 
     applyLanguage(m_snippet.language);
+
+    updateTitleCounter(m_snippet.name);
+    updateDescCounter(m_snippet.description);
 
     // Format timestamps — show local time, human-friendly
     auto fmtDt = [](const QDateTime& dt) -> QString {
@@ -403,4 +436,24 @@ void SnippetEditor::scheduleAutoSave()
 {
     m_dirty = true;
     m_saveTimer->start();
+}
+
+void SnippetEditor::updateTitleCounter(const QString& text)
+{
+    int len = text.length();
+    m_titleCounter->setText(QStringLiteral("%1/%2").arg(len).arg(SNIPPET_NAME_MAX));
+    bool over = (len >= SNIPPET_NAME_MAX);
+    m_titleCounter->setStyleSheet(
+        over ? "font-size:10px; color:#f85149; font-weight:600; padding:0 6px;"
+             : "font-size:10px; color:#484f58; padding:0 6px;");
+}
+
+void SnippetEditor::updateDescCounter(const QString& text)
+{
+    int len = text.length();
+    m_descCounter->setText(QStringLiteral("%1/%2").arg(len).arg(SNIPPET_DESC_MAX));
+    bool over = (len >= SNIPPET_DESC_MAX);
+    m_descCounter->setStyleSheet(
+        over ? "font-size:10px; color:#f85149; font-weight:600; padding:0 6px;"
+             : "font-size:10px; color:#484f58; padding:0 6px;");
 }

@@ -91,6 +91,7 @@ signals:
     void newFolderRequested(int parentFolderId);
     void renameFolderRequested(int folderId);
     void deleteFolderRequested(int folderId);
+    void emptyTrashRequested();
 
 private:
     void build();

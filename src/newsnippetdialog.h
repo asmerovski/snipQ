@@ -4,7 +4,6 @@
 #include <QComboBox>
 #include <QList>
 #include "folder.h"
-#include "newsnippetdialog.h"
 #include <QLabel>
 
 class NewSnippetDialog : public QDialog {
@@ -16,8 +15,9 @@ public:
     int     folderId() const;
 
 private:
-    QLineEdit* m_nameEdit;private:
-    QLabel* m_errorLabel;
+    QLineEdit* m_nameEdit;
+    QLabel*    m_nameCounter;
+    QLabel*    m_errorLabel;
     QComboBox* m_folderCombo;
     QList<int> m_folderIds;
 };

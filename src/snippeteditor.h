@@ -38,6 +38,8 @@ private:
     void rebuildTagChips();
     void scheduleAutoSave();
     void applyLanguage(const QString& lang);
+    void updateTitleCounter(const QString& text);
+    void updateDescCounter(const QString& text);
 
     Database*       m_db;
     Snippet         m_snippet;
@@ -46,6 +48,8 @@ private:
 
     QLineEdit*      m_titleEdit;
     QLineEdit*      m_descEdit;
+    QLabel*         m_titleCounter;
+    QLabel*         m_descCounter;
     QLabel*         m_timestampBar;  // ← created / modified line
     CodeEditor*     m_editor;
     QComboBox*      m_langCombo;

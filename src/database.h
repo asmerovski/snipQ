@@ -40,6 +40,7 @@ public:
     bool updateSnippet(const Snippet& snippet);
     bool deleteSnippet(int id, bool permanent = false);
     bool restoreSnippet(int id);
+    bool emptyTrash();
     bool toggleFavorite(int id);
 
     // ── Folders ──

@@ -29,6 +29,7 @@ private slots:
     void onNewFolder(int parentId);
     void onRenameFolder(int id);
     void onDeleteFolder(int id);
+    void onEmptyTrash();
     void onExport();
     void onImport();
     void onSettings();

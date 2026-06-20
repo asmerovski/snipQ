@@ -289,6 +289,9 @@ void Sidebar::build()
     binItem->setLabelColor("#6e7681");
     connect(binItem, &SidebarItem::clicked,
             this, [this](SidebarItem* i){ onItemClicked(i); });
+    connect(binItem, &SidebarItem::contextMenuRequested,
+            this, [this](SidebarItem* i, const QPoint& p){
+                onItemContextMenu(i, p); });
     m_libSection->addItem(binItem);
 
     m_layout->insertWidget(insertPos++, m_libSection);
@@ -356,6 +359,15 @@ void Sidebar::onItemClicked(SidebarItem* item)
 
 void Sidebar::onItemContextMenu(SidebarItem* item, const QPoint& globalPos)
 {
+    if (item->itemType() == "bin") {
+        QMenu menu(this);
+        auto* actEmpty = menu.addAction("Empty Trash\u2026");
+        actEmpty->setIcon(QIcon());
+        auto* chosen = menu.exec(globalPos);
+        if (chosen == actEmpty) emit emptyTrashRequested();
+        return;
+    }
+
     if (item->itemType() != "folder") return;
     int fid = item->payload().toInt();
 

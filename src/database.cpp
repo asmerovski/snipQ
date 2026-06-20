@@ -203,6 +203,13 @@ bool Database::restoreSnippet(int id) {
     return ok;
 }
 
+bool Database::emptyTrash() {
+    QSqlQuery q(m_db);
+    bool ok = q.exec("DELETE FROM snippets WHERE is_deleted=1");
+    if (ok) emit dataChanged();
+    return ok;
+}
+
 bool Database::toggleFavorite(int id) {
     QSqlQuery q(m_db);
     q.prepare("UPDATE snippets SET is_favorite=NOT is_favorite, updated_at=:uat WHERE id=:id");
