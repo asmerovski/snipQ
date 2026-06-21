@@ -82,16 +82,6 @@ SettingsDialog::SettingsDialog(Database* db, QWidget* parent)
     sgLay->addLayout(pathRow);
     lay->addWidget(storageGroup);
 
-    // ── About ─────────────────────────────────────────────────
-    auto* aboutGroup = new QGroupBox("About", this);
-    auto* abLay = new QVBoxLayout(aboutGroup);
-    auto* about = new QLabel(
-        "snipQ v1.0.0 — Code snippet manager.\n"
-        "Author: AsmerM\n"
-        "Built with Qt6 · SQLite · C++17", this);
-    about->setWordWrap(true);
-    abLay->addWidget(about);
-    lay->addWidget(aboutGroup);
 
     // ── Buttons ───────────────────────────────────────────────
     auto* btnRow = new QHBoxLayout;
