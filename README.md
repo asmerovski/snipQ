@@ -1,9 +1,10 @@
 # snipQ
 
-A cross-platform code snippet manager inspired by [massCode](https://masscode.io/), built with **Qt 6**, **C++17**, and **SQLite**.
+A cross-platform code snippet manager inspired by [massCode], built with **Qt 6**, **C++17**, and **SQLite**.
 
 Runs natively on **Windows**, **Linux**, and **macOS** — no Electron, no web runtime.
 
+Pure Qt C++ built for speed.
 ---
 
 ## ✨ Features
@@ -16,9 +17,10 @@ Runs natively on **Windows**, **Linux**, and **macOS** — no Electron, no web r
 | **Auto-save** | Debounced 800 ms auto-save while you type |
 | **Export / Import** | Full JSON round-trip (snippets + folders + tabs + tags) |
 | **Movable storage** | Relocate the SQLite DB to any path — NAS, external drive, etc. |
-| **TODO :: Cloud sync** | Google Drive · OneDrive · Dropbox · Box · FTP/FTPS · SMB/Samba |
+| **TODO :: Online backup** | Google Drive · OneDrive · Dropbox · Box · FTP/FTPS · SMB/Samba |
+| **TODO :: Oline sync** | Gist · Pastebin |
 | **Dark theme** | GitHub Dark–inspired palette, monospace editor |
-| **Bin / restore** | Soft-delete with restore, permanent delete from Bin view |
+| **Trash Bin / restore** | Soft-delete with restore, permanent delete from Bin view |
 
 
 ## 🔧 Prerequisites

@@ -7,7 +7,6 @@
 #include "snippetlist.h"
 #include "snippeteditor.h"
 #include "importexport.h"
-#include "syncmanager.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -33,7 +32,6 @@ private slots:
     void onExport();
     void onImport();
     void onSettings();
-    void onCloudSync();
     void onDataChanged();
 
 private:
@@ -46,7 +44,6 @@ private:
 
     Database*     m_db;
     ImportExport* m_io;
-    SyncManager*  m_sync;
 
     Sidebar*       m_sidebar;
     SnippetList*   m_snippetList;

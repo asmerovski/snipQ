@@ -87,6 +87,7 @@ SettingsDialog::SettingsDialog(Database* db, QWidget* parent)
     auto* abLay = new QVBoxLayout(aboutGroup);
     auto* about = new QLabel(
         "snipQ v1.0.0 — Code snippet manager.\n"
+        "Author: AsmerM\n"
         "Built with Qt6 · SQLite · C++17", this);
     about->setWordWrap(true);
     abLay->addWidget(about);

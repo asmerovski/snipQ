@@ -8,7 +8,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 # Only the modules snipQ actually uses — no WebEngine
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Sql)
 
 set(SOURCES
     src/main.cpp
@@ -26,10 +26,6 @@ set(SOURCES
     src/dialogs/newfolderdialog.cpp
     src/dialogs/newsnippetdialog.cpp
     src/dialogs/settingsdialog.cpp
-    src/dialogs/cloudsyncdialog.cpp
-    src/sync/syncmanager.cpp
-    src/sync/ftpsync.cpp
-    src/sync/smbsync.cpp
     src/importexport.cpp
     resources/resources.qrc
 )
@@ -39,12 +35,11 @@ qt_add_executable(snipQ ${SOURCES})
 target_include_directories(snipQ PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/src/models
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/sync
     ${CMAKE_CURRENT_SOURCE_DIR}/src/dialogs
 )
 
 target_link_libraries(snipQ PRIVATE
-    Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql Qt6::Network
+    Qt6::Core Qt6::Gui Qt6::Widgets Qt6::Sql
 )
 
 if(WIN32)

@@ -4,7 +4,6 @@
 #include "newfolderdialog.h"
 #include "newsnippetdialog.h"
 #include "settingsdialog.h"
-#include "cloudsyncdialog.h"
 
 #include <QMenuBar>
 #include <QStatusBar>
@@ -29,7 +28,6 @@ MainWindow::MainWindow(QWidget* parent)
     // ── Database ─────────────────────────────────────────────
     m_db   = new Database(this);
     m_io   = new ImportExport(m_db, this);
-    m_sync = new SyncManager(this);
 
     loadSettings();
 
@@ -142,9 +140,6 @@ void MainWindow::setupMenuBar() {
     fileMenu->addSeparator();
     fileMenu->addAction(makeAction("Quit",         QKeySequence::Quit,        qApp, []{ QApplication::quit(); }, this));
 
-    // Sync
-    auto* syncMenu = mb->addMenu("&Sync");
-    syncMenu->addAction(makeAction("Cloud Sync…", {}, this, [this]{ onCloudSync(); }, this));
 
     // Help
     auto* helpMenu = mb->addMenu("&Help");
@@ -152,6 +147,7 @@ void MainWindow::setupMenuBar() {
         QMessageBox::about(this, "About snipQ",
             "<b>snipQ v1.0.0</b><br>"
             "A cross-platform code snippet manager.<br><br>"
+            "Author: AsmerM<br><br>"
             "Built with Qt6 · SQLite · C++17");
     }, this));
 }
@@ -423,10 +419,6 @@ void MainWindow::onSettings() {
     dlg.exec();
 }
 
-void MainWindow::onCloudSync() {
-    CloudSyncDialog dlg(m_db, m_sync, this);
-    dlg.exec();
-}
 
 void MainWindow::onDataChanged() {
     // Use QueuedConnection semantics via invokeMethod so this always runs
