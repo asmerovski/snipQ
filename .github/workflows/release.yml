@@ -175,7 +175,6 @@ jobs:
           dnf install -y --setopt=install_weak_deps=False \
             cmake ninja-build gcc-c++ rpm-build \
             qt6-qtbase-devel qt6-qtbase-private-devel \
-            qt6-qtbase-sqlite \
             mesa-libGL-devel libxkbcommon-devel vulkan-loader-devel
 
       - name: Configure
