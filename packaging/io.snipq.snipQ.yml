@@ -1,0 +1,55 @@
+app-id: io.snipq.snipQ
+runtime: org.kde.Platform
+runtime-version: '6.6'
+sdk: org.kde.Sdk//6.6
+command: snipQ
+
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --filesystem=home
+  - --talk-name=org.freedesktop.portal.Desktop
+
+modules:
+  - name: snipQ
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/app
+    sources:
+      - type: dir
+        path: ..
+    post-install:
+      - install -Dm644 resources/app.png /app/share/icons/hicolor/256x256/apps/io.snipq.snipQ.png
+      - install -Dm644 resources/app.svg /app/share/icons/hicolor/scalable/apps/io.snipq.snipQ.svg
+      - |
+        install -Dm644 /dev/stdin /app/share/applications/io.snipq.snipQ.desktop << 'DEOF'
+        [Desktop Entry]
+        Type=Application
+        Name=snipQ
+        Comment=Cross-platform code snippet manager
+        Exec=snipQ
+        Icon=io.snipq.snipQ
+        Categories=Development;Utility;
+        Keywords=snippet;code;clipboard;
+        DEOF
+      - |
+        install -Dm644 /dev/stdin /app/share/metainfo/io.snipq.snipQ.metainfo.xml << 'MEOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <component type="desktop-application">
+          <id>io.snipq.snipQ</id>
+          <name>snipQ</name>
+          <summary>Cross-platform code snippet manager</summary>
+          <description>
+            <p>snipQ is a fast, offline-first code snippet manager with syntax
+            highlighting, folder organisation, tags, and JSON import/export.</p>
+          </description>
+          <launchable type="desktop-id">io.snipq.snipQ.desktop</launchable>
+          <url type="homepage">https://github.com/appsQ/snipQ</url>
+          <categories>
+            <category>Development</category>
+            <category>Utility</category>
+          </categories>
+        </component>
+        MEOF

@@ -1,0 +1,51 @@
+# Maintainer: snipQ <https://github.com/appsQ/snipQ>
+pkgname=snipq
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Cross-platform code snippet manager"
+arch=('x86_64')
+url="https://github.com/appsQ/snipQ"
+license=('MIT')
+depends=('qt6-base' 'sqlite')
+makedepends=('cmake' 'ninja' 'git')
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    local srcdir_inner
+    srcdir_inner=$(find "$srcdir" -maxdepth 1 -mindepth 1 -type d | head -1)
+    [ -z "$srcdir_inner" ] && srcdir_inner="$srcdir"
+
+    cmake -B "$srcdir/build" -S "$srcdir_inner" \
+        -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr \
+        -Wno-dev
+
+    cmake --build "$srcdir/build" --parallel
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+
+    install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/snipq.desktop" << 'DEOF'
+[Desktop Entry]
+Type=Application
+Name=snipQ
+Comment=Cross-platform code snippet manager
+Exec=snipQ
+Icon=snipq
+Categories=Development;Utility;
+Keywords=snippet;code;clipboard;
+DEOF
+
+    local src_icons
+    src_icons=$(find "$srcdir" -maxdepth 3 -name 'app.png' | head -1)
+    [ -n "$src_icons" ] && \
+        install -Dm644 "$src_icons" "$pkgdir/usr/share/icons/hicolor/256x256/apps/snipq.png"
+
+    local src_svg
+    src_svg=$(find "$srcdir" -maxdepth 3 -name 'app.svg' | head -1)
+    [ -n "$src_svg" ] && \
+        install -Dm644 "$src_svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/snipq.svg"
+}

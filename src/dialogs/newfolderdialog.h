@@ -1,6 +1,7 @@
 #pragma once
 #include <QDialog>
 #include <QLineEdit>
+#include <QLabel>
 
 class NewFolderDialog : public QDialog {
     Q_OBJECT
@@ -12,4 +13,5 @@ public:
 
 private:
     QLineEdit* m_nameEdit;
+    QLabel*    m_counter;
 };

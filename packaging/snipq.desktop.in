@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=snipQ
+Comment=Cross-platform code snippet manager
+Exec=snipQ
+Icon=snipq
+Categories=Development;Utility;
+Keywords=snippet;code;clipboard;

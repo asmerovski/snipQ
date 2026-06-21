@@ -4,6 +4,7 @@
 #include <QList>
 #include "snippet.h"
 #include "folder.h"
+#include "limits.h"
 
 // Result of an import operation
 struct ImportResult {
@@ -14,7 +15,13 @@ struct ImportResult {
     int     foldersTotal   = 0;
     int     foldersAdded   = 0;
     int     foldersSkipped = 0;
-    QStringList duplicateNames;  // names of skipped snippets
+    QStringList duplicateNames;   // names of skipped snippets
+
+    // Names that exceed NAME_MAX_LEN / TAG_MAX_LEN (detected during preview)
+    QStringList tooLongSnippetNames;
+    QStringList tooLongFolderNames;
+    QStringList tooLongTagNames;
+    int         truncatedCount = 0;  // items whose names were truncated during import
 };
 
 class Database : public QObject {
@@ -55,9 +62,11 @@ public:
 
     // ── Import / Export ──
     QJsonObject  exportToJson();
-    ImportResult importFromJson(const QJsonObject& json, bool skipDuplicates = true);
+    ImportResult importFromJson(const QJsonObject& json,
+                                bool skipDuplicates = true,
+                                bool truncateNames  = false);
 
-    // Check duplicates without importing
+    // Check duplicates and over-length names without importing
     ImportResult previewImport(const QJsonObject& json);
 
 signals:

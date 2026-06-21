@@ -1,4 +1,5 @@
 #include "database.h"
+#include "limits.h"
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QJsonObject>
@@ -40,14 +41,14 @@ bool Database::createSchema() {
     ok &= q.exec(R"(
         CREATE TABLE IF NOT EXISTS folders (
             id        INTEGER PRIMARY KEY AUTOINCREMENT,
-            name      TEXT NOT NULL,
+            name      TEXT NOT NULL CHECK(length(name) <= 256),
             parent_id INTEGER DEFAULT -1
         )
     )");
     ok &= q.exec(R"(
         CREATE TABLE IF NOT EXISTS snippets (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            name        TEXT NOT NULL DEFAULT 'Untitled',
+            name        TEXT NOT NULL DEFAULT 'Untitled' CHECK(length(name) <= 256),
             description TEXT DEFAULT '',
             content     TEXT DEFAULT '',
             language    TEXT DEFAULT 'plaintext',
@@ -359,7 +360,10 @@ ImportResult Database::previewImport(const QJsonObject& json) {
 
     for (auto fv : json["folders"].toArray()) {
         auto fo = fv.toObject();
-        if (folderExistsByName(fo["name"].toString()))
+        QString name = fo["name"].toString();
+        if (name.length() > NAME_MAX_LEN)
+            r.tooLongFolderNames << name;
+        if (folderExistsByName(name.left(NAME_MAX_LEN)))
             r.foldersSkipped++;
         else
             r.foldersAdded++;
@@ -367,7 +371,14 @@ ImportResult Database::previewImport(const QJsonObject& json) {
     for (auto sv : json["snippets"].toArray()) {
         auto so = sv.toObject();
         QString name = so["name"].toString();
-        if (snippetExistsByName(name)) {
+        if (name.length() > NAME_MAX_LEN)
+            r.tooLongSnippetNames << name;
+        for (auto tv : so["tags"].toArray()) {
+            QString tag = tv.toString();
+            if (tag.length() > TAG_MAX_LEN)
+                r.tooLongTagNames << tag;
+        }
+        if (snippetExistsByName(name.left(NAME_MAX_LEN))) {
             r.snippetsSkipped++;
             r.duplicateNames << name;
         } else {
@@ -377,7 +388,7 @@ ImportResult Database::previewImport(const QJsonObject& json) {
     return r;
 }
 
-ImportResult Database::importFromJson(const QJsonObject& json, bool skipDuplicates) {
+ImportResult Database::importFromJson(const QJsonObject& json, bool skipDuplicates, bool truncateNames) {
     ImportResult r;
     r.snippetsTotal = json["snippets"].toArray().size();
     r.foldersTotal  = json["folders"].toArray().size();
@@ -388,6 +399,11 @@ ImportResult Database::importFromJson(const QJsonObject& json, bool skipDuplicat
     for (auto fv : json["folders"].toArray()) {
         auto fo = fv.toObject();
         QString name = fo["name"].toString();
+        if (name.length() > NAME_MAX_LEN) {
+            if (!truncateNames) { r.foldersSkipped++; continue; }
+            name = name.left(NAME_MAX_LEN);
+            r.truncatedCount++;
+        }
         if (skipDuplicates && folderExistsByName(name)) {
             // Reuse existing folder id so snippets map correctly
             QSqlQuery q(m_db);
@@ -410,6 +426,11 @@ ImportResult Database::importFromJson(const QJsonObject& json, bool skipDuplicat
     for (auto sv : json["snippets"].toArray()) {
         auto so = sv.toObject();
         QString name = so["name"].toString();
+        if (name.length() > NAME_MAX_LEN) {
+            if (!truncateNames) { r.snippetsSkipped++; continue; }
+            name = name.left(NAME_MAX_LEN);
+            r.truncatedCount++;
+        }
         if (skipDuplicates && snippetExistsByName(name)) {
             r.snippetsSkipped++;
             r.duplicateNames << name;
@@ -420,7 +441,15 @@ ImportResult Database::importFromJson(const QJsonObject& json, bool skipDuplicat
         s.description = so["description"].toString();
         s.content     = so["content"].toString();
         s.language    = so["language"].toString("plaintext");
-        for (auto tv : so["tags"].toArray()) s.tags << tv.toString();
+        for (auto tv : so["tags"].toArray()) {
+            QString tag = tv.toString();
+            if (tag.length() > TAG_MAX_LEN) {
+                if (!truncateNames) continue;
+                tag = tag.left(TAG_MAX_LEN);
+                r.truncatedCount++;
+            }
+            s.tags << tag;
+        }
         s.folderId    = folderIdMap.value(so["folderId"].toInt(-1), -1);
         s.isFavorite  = so["isFavorite"].toBool();
         s.isDeleted   = so["isDeleted"].toBool();
