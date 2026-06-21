@@ -13,13 +13,13 @@ bool ImportExport::exportToFile(const QString& path) {
     return true;
 }
 
-ImportResult ImportExport::importFromFile(const QString& path, bool skipDuplicates) {
+ImportResult ImportExport::importFromFile(const QString& path, bool skipDuplicates, bool truncateNames) {
     ImportResult fail;
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) return fail;
     auto doc = QJsonDocument::fromJson(file.readAll());
     if (!doc.isObject()) return fail;
-    return m_db->importFromJson(doc.object(), skipDuplicates);
+    return m_db->importFromJson(doc.object(), skipDuplicates, truncateNames);
 }
 
 ImportResult ImportExport::previewFile(const QString& path) {

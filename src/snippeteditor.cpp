@@ -1,4 +1,5 @@
 #include "snippeteditor.h"
+#include "limits.h"
 #include "appsettings.h"
 #include "codeformatter.h"
 #include <QTimer>
@@ -9,7 +10,6 @@
 #include <QDateTime>
 #include <QFileInfo>
 
-static constexpr int SNIPPET_NAME_MAX = 256;
 static constexpr int SNIPPET_DESC_MAX = 512;
 
 static const QStringList LANGUAGES = {
@@ -37,9 +37,9 @@ SnippetEditor::SnippetEditor(Database* db, QWidget* parent)
     m_titleEdit = new QLineEdit(this);
     m_titleEdit->setObjectName("SnippetTitle");
     m_titleEdit->setPlaceholderText("Snippet name\u2026");
-    m_titleEdit->setMaxLength(SNIPPET_NAME_MAX);
+    m_titleEdit->setMaxLength(NAME_MAX_LEN);
     titleRow->addWidget(m_titleEdit, 1);
-    m_titleCounter = new QLabel(QStringLiteral("0/%1").arg(SNIPPET_NAME_MAX), this);
+    m_titleCounter = new QLabel(QStringLiteral("0/%1").arg(NAME_MAX_LEN), this);
     m_titleCounter->setObjectName("FieldCounter");
     m_titleCounter->setStyleSheet("font-size:10px; color:#484f58; padding:0 6px;");
     m_titleCounter->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -392,6 +392,7 @@ void SnippetEditor::buildTagsBar()
     m_tagInput = new QLineEdit(m_tagsBar);
     m_tagInput->setPlaceholderText("Add tag\u2026");
     m_tagInput->setFixedWidth(110);
+    m_tagInput->setMaxLength(TAG_MAX_LEN);
     m_tagInput->setStyleSheet(
         "background:#161b22; border:1px solid #30363d; border-radius:4px;"
         "padding:2px 8px; font-size:11px; color:#8b949e;");
@@ -441,8 +442,8 @@ void SnippetEditor::scheduleAutoSave()
 void SnippetEditor::updateTitleCounter(const QString& text)
 {
     int len = text.length();
-    m_titleCounter->setText(QStringLiteral("%1/%2").arg(len).arg(SNIPPET_NAME_MAX));
-    bool over = (len >= SNIPPET_NAME_MAX);
+    m_titleCounter->setText(QStringLiteral("%1/%2").arg(len).arg(NAME_MAX_LEN));
+    bool over = (len >= NAME_MAX_LEN);
     m_titleCounter->setStyleSheet(
         over ? "font-size:10px; color:#f85149; font-weight:600; padding:0 6px;"
              : "font-size:10px; color:#484f58; padding:0 6px;");

@@ -1,61 +1,47 @@
-name: Build snipQ
+name: CI Build
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Fast smoke-test build + unit tests.  Packaging is handled by release.yml.
+# ─────────────────────────────────────────────────────────────────────────────
 on:
   push:
-    branches: [ main, master ]
-    tags: [ 'v*' ]
-  
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
-  # ─── Linux ────────────────────────────────────────────────────────────────
   build-linux:
-    name: Build Linux (Ubuntu 22.04)
+    name: Build & Test (Ubuntu 22.04)
     runs-on: ubuntu-22.04
 
     steps:
-      # ── Checkout ─────────────────────────────────────────────────────────────
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # ── Cache apt packages ───────────────────────────────────────────────────
-      - name: Cache apt
+      - name: Cache apt packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: >
-            qt6-base-dev
-            qt6-base-dev-tools
-            libgl-dev
-            libxkbcommon-dev
-            libvulkan-dev
-            cmake
-            ninja-build
-            ffmpeg
+            build-essential cmake ninja-build
+            qt6-base-dev qt6-base-dev-tools
+            libqt6sql6-sqlite
+            libgl-dev libxkbcommon-dev libvulkan-dev
           version: 1.0
 
-      # ── Configure ────────────────────────────────────────────────────────────
       - name: Configure
         run: |
-          cmake -B build -S . \
-            -G Ninja \
+          cmake -B build -S . -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/install
 
-      # ── Build ─────────────────────────────────────────────────────────────────
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel $(nproc)
 
-      # ── Tests ─────────────────────────────────────────────────────────────────
       - name: Run tests
         working-directory: build
         env:
-          # Tests use QTEST_GUILESS_MAIN (no display needed),
-          # but set offscreen just in case Qt probes for a platform.
           QT_QPA_PLATFORM: offscreen
         run: ctest --output-on-failure --verbose
 
-      # ── Upload test results ───────────────────────────────────────────────────
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -63,10 +49,9 @@ jobs:
           name: test-results
           path: build/Testing/
 
-      # ── Upload binary (for manual inspection, not a release) ─────────────────
-      - name: Upload build artifact
+      - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: snipQ-linux-x86_64
+          name: snipQ-linux-x86_64-dev
           path: build/snipQ
           if-no-files-found: error

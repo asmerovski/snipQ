@@ -1,3 +1,4 @@
+#include <functional>
 #include "sidebar.h"
 #include <QPainter>
 #include <QMouseEvent>
@@ -90,6 +91,15 @@ void SidebarItem::paintEvent(QPaintEvent*)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+
+void SidebarItem::setIndentLevel(int level)
+{
+    // Base left margin is 20px; each indent level adds 12px
+    int left = 20 + level * 12;
+    if (auto* lay = qobject_cast<QHBoxLayout*>(layout()))
+        lay->setContentsMargins(left, 0, 8, 0);
+}
+
 // SidebarSection
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -104,7 +114,16 @@ SidebarSection::SidebarSection(const QString& title,
     outerLay->setContentsMargins(0, 0, 0, 0);
     outerLay->setSpacing(0);
 
-    m_header = new QToolButton(this);
+    // Header row: [chevron + title label (expands)] [optional action buttons]
+    auto* headerRow    = new QWidget(this);
+    headerRow->setFixedHeight(22);
+    headerRow->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    headerRow->setStyleSheet("background: #1c2128; border-top: 1px solid #21262d; border-bottom: 1px solid #21262d;");
+    m_headerLayout = new QHBoxLayout(headerRow);
+    m_headerLayout->setContentsMargins(0, 0, 0, 0);
+    m_headerLayout->setSpacing(0);
+
+    m_header = new QToolButton(headerRow);
     m_header->setText(title);
     m_header->setCheckable(false);
     m_header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -113,20 +132,19 @@ SidebarSection::SidebarSection(const QString& title,
     m_header->setArrowType(Qt::DownArrow);
     m_header->setStyleSheet(R"(
         QToolButton {
-            background: #1c2128;
+            background: transparent;
             color: #8b949e;
             border: none;
-            border-top: 1px solid #21262d;
-            border-bottom: 1px solid #21262d;
             font-size: 11px;
             font-weight: 600;
             letter-spacing: 1px;
             text-align: left;
             padding-left: 4px;
         }
-        QToolButton:hover { background: #21262d; color: #c9d1d9; }
+        QToolButton:hover { color: #c9d1d9; }
     )");
-    outerLay->addWidget(m_header);
+    m_headerLayout->addWidget(m_header, 1);
+    outerLay->addWidget(headerRow);
 
     m_body = new QWidget(this);
     m_body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -141,6 +159,29 @@ SidebarSection::SidebarSection(const QString& title,
         QStringLiteral("sidebar/expanded/") + key, true).toBool();
     m_body->setVisible(expanded);
     updateChevron();
+}
+
+
+QToolButton* SidebarSection::addHeaderButton(const QString& text, const QString& tooltip)
+{
+    auto* btn = new QToolButton(m_headerLayout->parentWidget());
+    btn->setText(text);
+    btn->setToolTip(tooltip);
+    btn->setFixedSize(22, 22);
+    btn->setStyleSheet(R"(
+        QToolButton {
+            background: transparent;
+            color: #8b949e;
+            border: none;
+            font-size: 14px;
+            font-weight: 400;
+            padding: 0;
+        }
+        QToolButton:hover { color: #c9d1d9; background: #30363d; border-radius: 3px; }
+        QToolButton:pressed { color: #58a6ff; }
+    )");
+    m_headerLayout->addWidget(btn);
+    return btn;
 }
 
 void SidebarSection::addItem(SidebarItem* item)
@@ -299,16 +340,36 @@ void Sidebar::build()
     // ── FOLDERS ───────────────────────────────────────────────
     m_foldSection = new SidebarSection("FOLDERS", "folders", &m_settings, this);
 
-    for (const Folder& f : m_db->allFolders()) {
-        auto* item = makeItem("\u25b8", f.name, "folder");
-        item->setPayload(f.id);
-        connect(item, &SidebarItem::clicked,
-                this, [this](SidebarItem* i){ onItemClicked(i); });
-        connect(item, &SidebarItem::contextMenuRequested,
-                this, [this](SidebarItem* i, const QPoint& p){
-                    onItemContextMenu(i, p); });
-        m_foldSection->addItem(item);
-    }
+    // ＋ button in the FOLDERS section header → create a new top-level folder
+    auto* addFolderBtn = m_foldSection->addHeaderButton("+", "New Folder");
+    connect(addFolderBtn, &QToolButton::clicked, this, [this]{
+        emit newFolderRequested(-1);
+    });
+
+    // Build a depth-first tree so subfolders appear indented under their parent.
+    QList<Folder> allFolders = m_db->allFolders();
+
+    // Map parentId → children
+    QMap<int, QList<Folder>> childMap;
+    for (const Folder& f : allFolders)
+        childMap[f.parentId] << f;
+
+    // Recursive lambda to add folders depth-first
+    std::function<void(int, int)> addFolderItems = [&](int parentId, int depth) {
+        for (const Folder& f : childMap.value(parentId)) {
+            auto* item = makeItem(depth > 0 ? "\u25b9" : "\u25b8", f.name, "folder");
+            item->setPayload(f.id);
+            item->setIndentLevel(depth);
+            connect(item, &SidebarItem::clicked,
+                    this, [this](SidebarItem* i){ onItemClicked(i); });
+            connect(item, &SidebarItem::contextMenuRequested,
+                    this, [this](SidebarItem* i, const QPoint& p){
+                        onItemContextMenu(i, p); });
+            m_foldSection->addItem(item);
+            addFolderItems(f.id, depth + 1);   // recurse into children
+        }
+    };
+    addFolderItems(-1, 0);   // start with root-level folders (parentId == -1)
     m_layout->insertWidget(insertPos++, m_foldSection);
 
     // ── TAGS ──────────────────────────────────────────────────

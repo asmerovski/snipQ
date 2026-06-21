@@ -1,3 +1,4 @@
+#include "qt_compat.h"
 #include <QApplication>
 #include <QStyleFactory>
 #include "mainwindow.h"

@@ -1,4 +1,5 @@
 #pragma once
+#include "qt_compat.h"
 #include <QWidget>
 #include <QLineEdit>
 #include <QComboBox>

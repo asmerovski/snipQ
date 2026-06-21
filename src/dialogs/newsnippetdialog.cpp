@@ -1,4 +1,5 @@
 #include "newsnippetdialog.h"
+#include "limits.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -15,11 +16,28 @@ NewSnippetDialog::NewSnippetDialog(const QList<Folder>& folders, int defaultFold
     lay->setContentsMargins(16,16,16,16);
 
     auto* form = new QFormLayout;
-    static int m_nameMaxLength = 10;
+
+    // Name row: input + live counter
+    auto* nameRow = new QHBoxLayout;
+    nameRow->setContentsMargins(0, 0, 0, 0);
+    nameRow->setSpacing(0);
     m_nameEdit = new QLineEdit(this);
-    m_nameEdit->setMaxLength(m_nameMaxLength);
+    m_nameEdit->setMaxLength(NAME_MAX_LEN);
     m_nameEdit->setPlaceholderText("Untitled Snippet");
-    form->addRow("Name:", m_nameEdit);
+    nameRow->addWidget(m_nameEdit, 1);
+    m_counter = new QLabel(QStringLiteral("0/%1").arg(NAME_MAX_LEN), this);
+    m_counter->setStyleSheet("font-size:10px; color:#484f58; padding:0 4px;");
+    m_counter->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    nameRow->addWidget(m_counter);
+    form->addRow("Name:", nameRow);
+
+    connect(m_nameEdit, &QLineEdit::textChanged, this, [this](const QString& t) {
+        int len = t.length();
+        m_counter->setText(QStringLiteral("%1/%2").arg(len).arg(NAME_MAX_LEN));
+        m_counter->setStyleSheet(len >= NAME_MAX_LEN
+            ? "font-size:10px; color:#f85149; font-weight:600; padding:0 4px;"
+            : "font-size:10px; color:#484f58; padding:0 4px;");
+    });
 
     m_errorLabel = new QLabel(this);
     m_errorLabel->setStyleSheet("color: red;");
@@ -50,7 +68,5 @@ NewSnippetDialog::NewSnippetDialog(const QList<Folder>& folders, int defaultFold
     m_nameEdit->setFocus();
 }
 
-QString NewSnippetDialog::name() const    { return m_nameEdit->text().trimmed(); }
-int     NewSnippetDialog::folderId() const {
-    return m_folderCombo->currentData().toInt();
-}
+QString NewSnippetDialog::name() const     { return m_nameEdit->text().trimmed(); }
+int     NewSnippetDialog::folderId() const { return m_folderCombo->currentData().toInt(); }

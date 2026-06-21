@@ -16,6 +16,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QCloseEvent>
+#include "limits.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent),
@@ -320,7 +321,52 @@ void MainWindow::onImport() {
         return;
     }
 
-    // Build an informative message
+    // ── Over-length name detection ────────────────────────────────────────
+    bool hasTooLong = !preview.tooLongSnippetNames.isEmpty()
+                   || !preview.tooLongFolderNames.isEmpty()
+                   || !preview.tooLongTagNames.isEmpty();
+
+    if (hasTooLong) {
+        QString warnMsg = QStringLiteral(
+            "<b>Some names in this file exceed the %1-character limit:</b><br><br>")
+            .arg(NAME_MAX_LEN);
+
+        auto appendList = [&](const QString& label, const QStringList& names) {
+            if (names.isEmpty()) return;
+            warnMsg += QStringLiteral("<b style='color:#f0883e'>%1</b><br>").arg(label);
+            QStringList shown = names.mid(0, 5);
+            for (auto& n : shown)
+                warnMsg += QStringLiteral("&nbsp;&nbsp;• %1 <span style='color:#8b949e'>"
+                                          "(%2 chars)</span><br>").arg(n.toHtmlEscaped()).arg(n.length());
+            if (names.size() > 5)
+                warnMsg += QStringLiteral("&nbsp;&nbsp;… and %1 more<br>").arg(names.size() - 5);
+            warnMsg += "<br>";
+        };
+
+        appendList(QStringLiteral("Snippet names (%1):").arg(preview.tooLongSnippetNames.size()),
+                   preview.tooLongSnippetNames);
+        appendList(QStringLiteral("Folder names (%1):").arg(preview.tooLongFolderNames.size()),
+                   preview.tooLongFolderNames);
+        appendList(QStringLiteral("Tags (%1):").arg(preview.tooLongTagNames.size()),
+                   preview.tooLongTagNames);
+
+        warnMsg += QStringLiteral(
+            "Choose <b>Truncate &amp; Import</b> to cut names to %1 characters and proceed,<br>"
+            "or <b>Cancel</b> to abort and fix the file manually.").arg(NAME_MAX_LEN);
+
+        QMessageBox dlgWarn(this);
+        dlgWarn.setWindowTitle("Names Too Long");
+        dlgWarn.setTextFormat(Qt::RichText);
+        dlgWarn.setText(warnMsg);
+        dlgWarn.setIcon(QMessageBox::Warning);
+        auto* btnTruncate = dlgWarn.addButton("Truncate & Import", QMessageBox::AcceptRole);
+        auto* btnAbort    = dlgWarn.addButton("Cancel",            QMessageBox::RejectRole);
+        dlgWarn.setDefaultButton(btnAbort);
+        dlgWarn.exec();
+        if (dlgWarn.clickedButton() != btnTruncate) return;
+    }
+
+    // ── Duplicate / summary dialog ────────────────────────────────────────
     bool hasDupes = (preview.snippetsSkipped > 0 || preview.foldersSkipped > 0);
     bool hasNew   = (preview.snippetsAdded   > 0 || preview.foldersAdded   > 0);
 
@@ -343,6 +389,11 @@ void MainWindow::onImport() {
         .arg(preview.foldersAdded)
         .arg(preview.foldersSkipped);
 
+    if (hasTooLong)
+        msg += QStringLiteral(
+            "<br><span style='color:#f0883e'>⚠ Over-length names will be truncated to %1 chars.</span>")
+            .arg(NAME_MAX_LEN);
+
     if (hasDupes && !preview.duplicateNames.isEmpty()) {
         QStringList shown = preview.duplicateNames.mid(0, 8);
         if (preview.duplicateNames.size() > 8)
@@ -360,7 +411,7 @@ void MainWindow::onImport() {
             "or <b>Import All</b> to import everything regardless.");
     }
 
-    if (!hasNew && !hasDupes) {
+    if (!hasNew && !hasDupes && !hasTooLong) {
         QMessageBox::information(this, "Nothing to Import",
             "All snippets in this file already exist in your library.");
         return;
@@ -392,7 +443,7 @@ void MainWindow::onImport() {
 
     bool skipDuplicates = (clicked != btnAll);
 
-    ImportResult result = m_io->importFromFile(path, skipDuplicates);
+    ImportResult result = m_io->importFromFile(path, skipDuplicates, hasTooLong);
     if (!result.success) {
         QMessageBox::warning(this, "Import Failed",
             "The import transaction failed. No changes were made.");
@@ -403,10 +454,14 @@ void MainWindow::onImport() {
     m_snippetList->refresh();
 
     QString summary = QStringLiteral(
-        "Import complete: %1 snippet(s) added, %2 skipped.")
+        "Import complete: %1 snippet(s) added, %2 skipped")
         .arg(result.snippetsAdded)
         .arg(result.snippetsSkipped);
-    statusBar()->showMessage(summary, 5000);
+    if (result.truncatedCount > 0)
+        summary += QStringLiteral(", %1 name(s) truncated to %2 chars")
+                   .arg(result.truncatedCount).arg(NAME_MAX_LEN);
+    summary += ".";
+    statusBar()->showMessage(summary, 6000);
 }
 
 void MainWindow::onSettings() {

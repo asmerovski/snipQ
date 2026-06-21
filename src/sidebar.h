@@ -1,4 +1,5 @@
 #pragma once
+#include "qt_compat.h"
 #include <QWidget>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -30,6 +31,7 @@ public:
     QString itemType() const { return m_type; }
     void    setPayload(const QVariant& v) { m_payload = v; }
     QVariant payload() const             { return m_payload; }
+    void    setIndentLevel(int level);   // 0 = root, 1 = subfolder, etc.
 
 signals:
     void clicked(SidebarItem* self);
@@ -65,6 +67,10 @@ public:
     QList<SidebarItem*> items() const { return m_items; }
     bool isExpanded() const;
 
+    // Add a small action button to the right side of the section header.
+    // Returns the button so the caller can connect signals.
+    QToolButton* addHeaderButton(const QString& text, const QString& tooltip);
+
 private slots:
     void toggle();
 
@@ -74,6 +80,7 @@ private:
     QString             m_key;
     QSettings*          m_settings;
     QToolButton*        m_header;
+    QHBoxLayout*        m_headerLayout;   // row containing m_header + action buttons
     QWidget*            m_body;
     QVBoxLayout*        m_bodyLayout;
     QList<SidebarItem*> m_items;
