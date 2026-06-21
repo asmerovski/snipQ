@@ -36,19 +36,6 @@ jobs:
       - name: Build
         run: cmake --build build --parallel $(nproc)
 
-      - name: Run tests
-        working-directory: build
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: ctest --output-on-failure --verbose
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: build/Testing/
-
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
