@@ -18,11 +18,11 @@ concurrency:
 jobs:
 
   # ───────────────────────────────────────────────────────────────────────────
-  # AppImage  (Ubuntu 22.04 / linuxdeploy)
+  # AppImage  (Ubuntu 24.04 / linuxdeploy)
   # ───────────────────────────────────────────────────────────────────────────
   appimage:
     name: AppImage (x86_64)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -101,11 +101,11 @@ jobs:
           files: snipQ-${{ github.ref_name }}-linux-x86_64.AppImage
 
   # ───────────────────────────────────────────────────────────────────────────
-  # DEB  (Ubuntu 22.04 / CPack DEB)
+  # DEB  (Ubuntu 24.04 / CPack DEB)
   # ───────────────────────────────────────────────────────────────────────────
   deb:
     name: Debian Package (amd64)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -155,7 +155,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   rpm:
     name: RPM Package (x86_64)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: fedora:40
 
@@ -203,7 +203,7 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   arch:
     name: Arch Linux Package (x86_64)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: archlinux:latest
 
@@ -251,11 +251,11 @@ jobs:
           files: snipQ-${{ github.ref_name }}-arch-x86_64.pkg.tar.zst
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Flatpak  (Ubuntu 22.04 / flatpak-builder)
+  # Flatpak  (Ubuntu 24.04 / flatpak-builder)
   # ───────────────────────────────────────────────────────────────────────────
   flatpak:
     name: Flatpak Bundle
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
