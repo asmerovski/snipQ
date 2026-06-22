@@ -43,7 +43,6 @@ jobs:
           cmake -B build -S . -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr
-
       - name: Build
         run: cmake --build build --parallel $(nproc)
 
@@ -63,20 +62,17 @@ jobs:
           Categories=Development;Utility;
           Keywords=snippet;code;clipboard;
           EOF
-
       - name: Copy icons
         run: |
           mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
           cp resources/app.png AppDir/usr/share/icons/hicolor/256x256/apps/snipQ.png
           mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
           cp resources/app.svg AppDir/usr/share/icons/hicolor/scalable/apps/snipQ.svg
-
       - name: Download linuxdeploy + Qt plugin
         run: |
           wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
           chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
-
       - name: Package AppImage
         env:
           QMAKE: /usr/lib/qt6/bin/qmake
@@ -88,12 +84,10 @@ jobs:
             --output appimage \
             --desktop-file AppDir/usr/share/applications/snipQ.desktop \
             --icon-file AppDir/usr/share/icons/hicolor/256x256/apps/snipQ.png
-
       - name: Rename AppImage
         run: |
           find . -maxdepth 1 -name '*.AppImage' ! -name 'linuxdeploy*' \
             -exec mv {} snipQ-${{ github.ref_name }}-linux-x86_64.AppImage \;
-
       - uses: actions/upload-artifact@v4
         with:
           name: appimage
@@ -132,7 +126,6 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DCPACK_GENERATOR=DEB
-
       - name: Build
         run: cmake --build build --parallel $(nproc)
 
@@ -145,7 +138,6 @@ jobs:
         run: |
           find . -maxdepth 1 -name '*.deb' \
             -exec mv {} snipQ-${{ github.ref_name }}-linux-amd64.deb \;
-
       - uses: actions/upload-artifact@v4
         with:
           name: deb
@@ -176,14 +168,12 @@ jobs:
             cmake ninja-build gcc-c++ rpm-build \
             qt6-qtbase-devel qt6-qtbase-private-devel \
             mesa-libGL-devel libxkbcommon-devel vulkan-loader-devel
-
       - name: Configure
         run: |
           cmake -B build -S . -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DCPACK_GENERATOR=RPM
-
       - name: Build
         run: cmake --build build --parallel $(nproc)
 
@@ -196,7 +186,6 @@ jobs:
         run: |
           find . -maxdepth 1 -name '*.rpm' \
             -exec mv {} snipQ-${{ github.ref_name }}-linux-x86_64.rpm \;
-
       - uses: actions/upload-artifact@v4
         with:
           name: rpm
@@ -225,10 +214,9 @@ jobs:
         run: |
           pacman -Syu --noconfirm
           pacman -S --noconfirm --needed \
-            base-devel cmake ninja \
+            base-devel git cmake ninja \
             qt6-base sqlite \
             mesa libxkbcommon vulkan-icd-loader
-
       - name: Prepare source tarball for makepkg
         run: |
           VER=$(grep -m1 'project(snipQ VERSION' CMakeLists.txt \
@@ -239,21 +227,17 @@ jobs:
           sed -i "s/^pkgver=.*/pkgver=$VER/" /tmp/pkgbuild/PKGBUILD
           tar --exclude='.git' -czf /tmp/pkgbuild/snipq-$VER.tar.gz \
             --transform "s|^\.|snipq-$VER|" .
-
       - name: Set up build user
         run: |
           useradd -m builder
           chown -R builder:builder /tmp/pkgbuild
-
       - name: Build package
         run: |
-          su builder -c "cd /tmp/pkgbuild && makepkg -s --noconfirm --noprogressbar"
-
+          su builder -c "cd /tmp/pkgbuild && makepkg --noconfirm --noprogressbar"
       - name: Collect package
         run: |
           PKG=$(find /tmp/pkgbuild -name '*.pkg.tar.zst' | head -1)
           cp "$PKG" snipQ-${{ github.ref_name }}-arch-x86_64.pkg.tar.zst
-
       - uses: actions/upload-artifact@v4
         with:
           name: arch
@@ -280,18 +264,15 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y flatpak flatpak-builder
-
       - name: Add Flathub remote
         run: |
           sudo flatpak remote-add --if-not-exists flathub \
             https://dl.flathub.org/repo/flathub.flatpakrepo
-
       - name: Install KDE Platform & SDK
         run: |
           sudo flatpak install -y flathub \
             org.kde.Platform//6.6 \
             org.kde.Sdk//6.6
-
       - name: Build Flatpak
         run: |
           flatpak-builder \
@@ -301,14 +282,12 @@ jobs:
             --repo=flatpak-repo \
             flatpak-build \
             packaging/io.snipq.snipQ.yml
-
       - name: Create Flatpak bundle
         run: |
           flatpak build-bundle \
             flatpak-repo \
             snipQ-${{ github.ref_name }}-linux.flatpak \
             io.snipq.snipQ
-
       - uses: actions/upload-artifact@v4
         with:
           name: flatpak
