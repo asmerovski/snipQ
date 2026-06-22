@@ -263,7 +263,7 @@ jobs:
       - name: Install flatpak + flatpak-builder
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y flatpak flatpak-builder
+          sudo apt-get install -y flatpak flatpak-builder appstream
       - name: Add Flathub remote
         run: |
           sudo flatpak remote-add --if-not-exists flathub \
@@ -279,7 +279,6 @@ jobs:
             --force-clean \
             --disable-rofiles-fuse \
             --install-deps-from=flathub \
-            --no-parallel-appstream \
             --repo=flatpak-repo \
             flatpak-build \
             packaging/io.snipq.snipQ.yml
