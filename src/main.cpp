@@ -12,8 +12,8 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
 
     app.setApplicationName("snipQ");
-    app.setOrganizationName("snipQ");
-    app.setApplicationVersion("1.0.0");
+    app.setOrganizationName("AppSMall");
+    app.setApplicationVersion("0.6.1");
     app.setWindowIcon(QIcon(":/icons/app.png"));
 
     // Fusion base style for consistent cross-platform rendering
