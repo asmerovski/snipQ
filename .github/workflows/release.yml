@@ -279,6 +279,7 @@ jobs:
             --force-clean \
             --disable-rofiles-fuse \
             --install-deps-from=flathub \
+            --no-parallel-appstream \
             --repo=flatpak-repo \
             flatpak-build \
             packaging/io.snipq.snipQ.yml
