@@ -1,16 +1,14 @@
 app-id: io.snipq.snipQ
 runtime: org.kde.Platform
-runtime-version: '6.6'
-sdk: org.kde.Sdk//6.6
+runtime-version: '6.8'
+sdk: org.kde.Sdk//6.8
 command: snipQ
-
 finish-args:
   - --socket=wayland
   - --socket=fallback-x11
   - --share=ipc
   - --filesystem=home
   - --talk-name=org.freedesktop.portal.Desktop
-
 modules:
   - name: snipQ
     buildsystem: cmake-ninja
@@ -39,6 +37,8 @@ modules:
         <?xml version="1.0" encoding="UTF-8"?>
         <component type="desktop-application">
           <id>io.snipq.snipQ</id>
+          <metadata_license>MIT</metadata_license>
+          <project_license>MIT</project_license>
           <name>snipQ</name>
           <summary>Cross-platform code snippet manager</summary>
           <description>
