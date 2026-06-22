@@ -1,8 +1,9 @@
-.build/
+bin/
+build/
+tests/
 .build-debug/
 .vscode/
 .qtcreator/
 .kdev4/
 .cache/
 
-build/
