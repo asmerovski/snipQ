@@ -271,8 +271,8 @@ jobs:
       - name: Install KDE Platform & SDK
         run: |
           sudo flatpak install -y flathub \
-            org.kde.Platform//6.8 \
-            org.kde.Sdk//6.8
+            org.kde.Platform//6.9 \
+            org.kde.Sdk//6.9
       - name: Build Flatpak
         run: |
           flatpak-builder \
